@@ -94,9 +94,30 @@ export async function httpFetch(url, options = {}) {
 }
 
 /**
+ * Convenience method for HEAD requests
+ */
+export async function httpHead(url, headers = {}) {
+    return httpFetch(url, { method: 'HEAD', headers });
+}
+
+/**
  * Convenience method for GET requests
  */
 export async function httpGet(url, headers = {}) {
+    return httpFetch(url, { method: 'GET', headers });
+}
+
+/**
+ * Fetch a range of bytes from a URL
+ * @param {string} url - The URL to fetch
+ * @param {number} start - Start byte (inclusive)
+ * @param {number} end - End byte (inclusive)
+ * @returns {Promise<Object>} Response with binary data
+ */
+export async function httpFetchRange(url, start, end) {
+    const headers = {
+        'Range': `bytes=${start}-${end}`
+    };
     return httpFetch(url, { method: 'GET', headers });
 }
 
@@ -146,6 +167,22 @@ export async function httpFetchText(url, options = {}) {
 
     if (response.status < 200 || response.status >= 300) {
         throw new Error(`HTTP ${response.status}: ${response.body}`);
+    }
+
+    // If the response is marked as binary, decode from base64
+    if (response.is_binary) {
+        try {
+            const binaryString = atob(response.body);
+            // Convert binary string to text
+            const bytes = new Uint8Array(binaryString.length);
+            for (let i = 0; i < binaryString.length; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return new TextDecoder('utf-8').decode(bytes);
+        } catch (error) {
+            console.warn('[httpFetchText] Failed to decode base64, returning as-is:', error);
+            return response.body;
+        }
     }
 
     return response.body;

@@ -1,11 +1,14 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 use serde::{Deserialize, Serialize};
+use base64::{Engine as _, engine::general_purpose};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct HttpResponse {
     body: String,
     status: u16,
     headers: std::collections::HashMap<String, String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    is_binary: Option<bool>,
 }
 
 #[tauri::command]
@@ -66,16 +69,44 @@ async fn http_fetch(
         }
     }
 
-    // Get response body as text
-    let body = response.text().await
+    // Get response body as bytes
+    let bytes = response.bytes().await
         .map_err(|e| format!("Failed to read response body: {}", e))?;
 
-    log::info!("Request completed with status: {}", status);
+    // Determine if content is binary or text
+    let content_type = response_headers.get("content-type")
+        .map(|s| s.to_lowercase())
+        .unwrap_or_default();
+    
+    // Consider text formats (JSON, XML, plain text, M3U playlists)
+    let is_text = content_type.contains("json") ||
+                  content_type.contains("xml") ||
+                  content_type.contains("text/") ||
+                  content_type.contains("mpegurl") ||
+                  content_type.contains("x-mpegurl") ||
+                  content_type.contains("m3u");
+    
+    // Consider binary formats (video, audio, images, etc.)
+    let is_binary = !is_text && (
+                    content_type.contains("video/") ||
+                    content_type.contains("audio/") ||
+                    content_type.contains("image/") ||
+                    content_type.contains("octet-stream"));
+    
+    // For binary data or when we can't decode as UTF-8, use base64 encoding
+    let body = if is_binary || std::str::from_utf8(&bytes).is_err() {
+        general_purpose::STANDARD.encode(&bytes)
+    } else {
+        String::from_utf8_lossy(&bytes).to_string()
+    };
+
+    log::info!("Request completed with status: {}, binary: {}, size: {} bytes", status, is_binary, bytes.len());
 
     Ok(HttpResponse {
         body,
         status,
         headers: response_headers,
+        is_binary: Some(is_binary),
     })
 }
 

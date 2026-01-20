@@ -13,6 +13,7 @@
  */
 
 import { httpFetch } from './httpClient';
+import { detectStreamFormat, StreamFormat } from './streamFormatDetector';
 import { HlsAdapter } from './adapters/HlsAdapter'
 import { DashAdapter } from './adapters/DashAdapter'
 import { MpegtsAdapter } from './adapters/MpegtsAdapter'
@@ -181,6 +182,7 @@ export class StreamHandler {
 
     /**
      * Tenta di rilevare il tipo via Content-Type (HEAD request)
+     * DEPRECATED: Use detectStreamType() with streamFormatDetector instead
      */
     async detectTypeFromContentType(url) {
         if (!this.config.enableContentTypeSniffing) {
@@ -227,7 +229,25 @@ export class StreamHandler {
     }
 
     /**
-     * Rileva il tipo di stream (combinando URL e Content-Type)
+     * Maps StreamFormat (from detector) to StreamType (internal)
+     */
+    mapFormatToType(format) {
+        const formatToTypeMap = {
+            'hls': StreamType.HLS,
+            'dash': StreamType.DASH,
+            'mpegts': StreamType.MPEGTS,
+            'ts': StreamType.MPEGTS,
+            'mp4': StreamType.NATIVE,
+            'flv': StreamType.FLV,
+            'webm': StreamType.NATIVE,
+            'unknown': StreamType.UNKNOWN
+        };
+
+        return formatToTypeMap[format] || StreamType.UNKNOWN;
+    }
+
+    /**
+     * Rileva il tipo di stream usando il nuovo detector deterministico
      */
     async detectStreamType(url) {
         // 1. Controlla cache
@@ -237,20 +257,32 @@ export class StreamHandler {
             return cached
         }
 
-        // 2. Rileva da URL
-        let detectedType = this.detectTypeFromUrl(url)
+        // 2. Gestisci protocolli speciali (RTSP/RTMP)
+        const lowerUrl = url.toLowerCase()
+        if (lowerUrl.startsWith('rtsp://')) return StreamType.RTSP
+        if (lowerUrl.startsWith('rtmp://')) return StreamType.RTMP
 
-        if (detectedType !== StreamType.UNKNOWN) {
-            console.log(`[StreamHandler] Detected type from URL: ${detectedType}`)
-            return detectedType
-        }
+        // 3. Usa il nuovo detector per analisi deterministica
+        try {
+            const detectionResult = await detectStreamFormat(url, {
+                sampleSize: 2048,
+                skipContentInspection: false
+            });
 
-        // 3. Se sconosciuto, prova Content-Type
-        detectedType = await this.detectTypeFromContentType(url)
+            if (detectionResult.detectedFormat &&
+                detectionResult.detectedFormat.format !== 'unknown') {
 
-        if (detectedType !== StreamType.UNKNOWN) {
-            console.log(`[StreamHandler] Detected type from Content-Type: ${detectedType}`)
-            return detectedType
+                const streamType = this.mapFormatToType(detectionResult.detectedFormat.format);
+
+                console.log(`[StreamHandler] Detected type: ${streamType}`);
+                console.log(`[StreamHandler] Detection confidence: ${detectionResult.confidence}`);
+                console.log(`[StreamHandler] Detection method: ${detectionResult.detectionMethod}`);
+                console.log(`[StreamHandler] Library: ${detectionResult.detectedFormat.lib}`);
+
+                return streamType;
+            }
+        } catch (err) {
+            console.warn('[StreamHandler] Stream format detection failed:', err.message);
         }
 
         console.log('[StreamHandler] Could not detect type, will try fallback chain')
@@ -326,44 +358,78 @@ export class StreamHandler {
         // Emetti evento di inizio caricamento
         this.emit('loading', { url })
 
-        // Rileva tipo stream
+        // Rileva tipo stream con il nuovo detector deterministico
         const detectedType = await this.detectStreamType(url)
 
-        // Costruisci fallback chain
-        const fallbackChain = this.buildFallbackChain(detectedType)
-        console.log('[StreamHandler] Fallback chain:', fallbackChain)
-
-        // Prova ogni adapter nella chain
-        for (const type of fallbackChain) {
-            if (!this.config.enableFallback && type !== fallbackChain[0]) {
-                break // Se fallback disabilitato, prova solo il primo
-            }
-
-            console.log(`[StreamHandler] Trying adapter: ${type}`)
+        // Se la detection è riuscita con alta confidenza, prova solo quell'adapter
+        if (detectedType !== StreamType.UNKNOWN) {
+            console.log(`[StreamHandler] Deterministic detection: ${detectedType}`)
 
             try {
-                const adapter = this.createAdapter(type)
+                const adapter = this.createAdapter(detectedType)
 
                 // Propaga eventi dall'adapter
-                adapter.on('ready', (data) => this.emit('ready', { ...data, type }))
-                adapter.on('error', (data) => this.emit('adapterError', { ...data, type }))
-                adapter.on('buffering', (data) => this.emit('buffering', { ...data, type }))
+                adapter.on('ready', (data) => this.emit('ready', { ...data, type: detectedType }))
+                adapter.on('error', (data) => this.emit('adapterError', { ...data, type: detectedType }))
+                adapter.on('buffering', (data) => this.emit('buffering', { ...data, type: detectedType }))
 
                 const success = await adapter.attach(videoElement, url)
 
                 if (success) {
                     this.currentAdapter = adapter
-                    this.currentType = type
+                    this.currentType = detectedType
 
                     // Salva in cache
-                    this.streamCache.set(url, type)
+                    this.streamCache.set(url, detectedType)
 
-                    console.log(`[StreamHandler] Success with adapter: ${type}`)
-                    this.emit('success', { type, url })
+                    console.log(`[StreamHandler] Success with adapter: ${detectedType}`)
+                    this.emit('success', { type: detectedType, url })
                     return true
                 }
+
+                console.warn(`[StreamHandler] Detected adapter ${detectedType} failed, trying fallback...`)
             } catch (err) {
-                console.warn(`[StreamHandler] Adapter ${type} failed:`, err.message)
+                console.warn(`[StreamHandler] Detected adapter ${detectedType} error:`, err.message)
+            }
+        }
+
+        // Fallback: se detection fallisce o l'adapter rilevato non funziona
+        if (this.config.enableFallback) {
+            console.log('[StreamHandler] Trying fallback chain...')
+
+            const fallbackChain = this.buildFallbackChain(detectedType)
+            console.log('[StreamHandler] Fallback chain:', fallbackChain)
+
+            // Prova ogni adapter nella chain (salta quello già provato)
+            for (const type of fallbackChain) {
+                if (type === detectedType) continue; // Già provato sopra
+
+                console.log(`[StreamHandler] Trying fallback adapter: ${type}`)
+
+                try {
+                    const adapter = this.createAdapter(type)
+
+                    // Propaga eventi dall'adapter
+                    adapter.on('ready', (data) => this.emit('ready', { ...data, type }))
+                    adapter.on('error', (data) => this.emit('adapterError', { ...data, type }))
+                    adapter.on('buffering', (data) => this.emit('buffering', { ...data, type }))
+
+                    const success = await adapter.attach(videoElement, url)
+
+                    if (success) {
+                        this.currentAdapter = adapter
+                        this.currentType = type
+
+                        // Salva in cache
+                        this.streamCache.set(url, type)
+
+                        console.log(`[StreamHandler] Success with fallback adapter: ${type}`)
+                        this.emit('success', { type, url })
+                        return true
+                    }
+                } catch (err) {
+                    console.warn(`[StreamHandler] Fallback adapter ${type} failed:`, err.message)
+                }
             }
         }
 
