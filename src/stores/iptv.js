@@ -53,10 +53,77 @@ export const useIptvStore = defineStore("iptv", () => {
         );
     });
 
+    // Helper function per costruire URL con parametri
+    function buildPlaylistUrl(baseUrl, username, password, type, output) {
+        try {
+            const url = new URL(baseUrl);
+
+            // Aggiungi username e password se presenti
+            if (username && username.trim()) {
+                url.searchParams.set('username', username.trim());
+            }
+            if (password && password.trim()) {
+                url.searchParams.set('password', password.trim());
+            }
+
+            // Aggiungi type se specificato
+            if (type && type.trim()) {
+                url.searchParams.set('type', type.trim());
+            }
+
+            // Aggiungi output se specificato
+            if (output && output.trim()) {
+                url.searchParams.set('output', output.trim());
+            }
+
+            return url.toString();
+        } catch (e) {
+            // Se l'URL non è valido, ritorna l'originale
+            return baseUrl;
+        }
+    }
+
     // Actions
+    async function testPlaylistUrl(url, username, password, type, output) {
+        const targetUrl = buildPlaylistUrl(url, username, password, type, output);
+
+        if (!targetUrl) {
+            error.value = "URL playlist non valido";
+            return false;
+        }
+
+        isLoading.value = true;
+        error.value = null;
+
+        try {
+            const response = await fetch(targetUrl);
+
+            if (!response.ok) {
+                throw new Error(`Errore HTTP: ${response.status}`);
+            }
+
+            const content = await response.text();
+            const result = parseM3U(content);
+
+            if (result.channels.length === 0) {
+                throw new Error("Nessun canale trovato nella playlist");
+            }
+
+            // Restituisci i risultati senza salvarli
+            return { success: true, channels: result.channels, categories: result.categories };
+        } catch (err) {
+            error.value = err.message || "Errore nel caricamento della playlist";
+            return { success: false, error: err.message || "Errore nel caricamento della playlist" };
+        } finally {
+            isLoading.value = false;
+        }
+    }
+
     async function loadPlaylist(playlistIdOrUrl = null) {
         let targetUrl;
         let id;
+
+        let playlist = null;
 
         // Se è un URL diretto (inizia con http), usalo direttamente
         if (typeof playlistIdOrUrl === 'string' && playlistIdOrUrl.startsWith('http')) {
@@ -64,16 +131,25 @@ export const useIptvStore = defineStore("iptv", () => {
             // Cerca la playlist per URL per trovare l'ID
             const existingPlaylist = playlists.value.find(p => p.url === targetUrl);
             id = existingPlaylist?.id || activePlaylistId.value;
+            playlist = existingPlaylist;
         } else {
             // Altrimenti cerca per ID
             id = playlistIdOrUrl || activePlaylistId.value;
-            const playlist = playlists.value.find(p => p.id === id);
+            playlist = playlists.value.find(p => p.id === id);
 
             if (!playlist) {
                 error.value = "Playlist non trovata";
                 return false;
             }
-            targetUrl = playlist.url;
+
+            // Costruisci l'URL con i parametri salvati
+            targetUrl = buildPlaylistUrl(
+                playlist.url,
+                playlist.username,
+                playlist.password,
+                playlist.type,
+                playlist.output
+            );
         }
 
         if (!targetUrl) {
@@ -158,13 +234,15 @@ export const useIptvStore = defineStore("iptv", () => {
         expandedCategories.value = [];
     }
 
-    function addPlaylist(name, url, username = "", password = "") {
+    function addPlaylist(name, url, username = "", password = "", type = "", output = "") {
         const newPlaylist = {
             id: Date.now().toString(),
             name,
             url,
             username,
             password,
+            type,
+            output,
             createdAt: new Date().toISOString(),
         };
         playlists.value.push(newPlaylist);
@@ -225,6 +303,7 @@ export const useIptvStore = defineStore("iptv", () => {
 
         // Actions
         loadPlaylist,
+        testPlaylistUrl,
         selectChannel,
         clearSelection,
         toggleCategory,

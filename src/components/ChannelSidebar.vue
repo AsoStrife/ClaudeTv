@@ -200,6 +200,10 @@ function goToSettings() {
     router.push('/settings')
 }
 
+function goToHome() {
+    router.push('/')
+}
+
 // Expose store methods
 const {
     selectChannel,
