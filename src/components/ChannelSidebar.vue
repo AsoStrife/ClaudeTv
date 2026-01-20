@@ -24,12 +24,12 @@
 
     <!-- Sidebar completa -->
     <aside v-if="!isSidebarCollapsed"
-        class="h-full w-80 bg-gray-900 text-white flex flex-col transition-all duration-300 ease-in-out">
+        class="h-full w-64 sm:w-72 md:w-80 bg-gray-900 text-white flex flex-col transition-all duration-300 ease-in-out">
         <div class="flex-shrink-0 p-4 border-b border-gray-700">
             <!-- Header -->
-            <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center justify-between mb-3 sm:mb-4">
                 <div class="flex-1 min-w-0">
-                    <h1 class="text-xl font-bold text-blue-400">ClaudeTV</h1>
+                    <h1 class="text-lg sm:text-xl font-bold text-blue-400">ClaudeTV</h1>
                     <p v-if="activePlaylist" class="text-xs text-gray-500 truncate mt-0.5">Playlist: {{
                         activePlaylist.name }}</p>
                 </div>

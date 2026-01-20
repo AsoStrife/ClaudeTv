@@ -18,13 +18,17 @@ onMounted(async () => {
 </script>
 
 <template>
-    <div class="h-screen w-screen flex bg-gray-950 overflow-hidden">
-        <!-- Sidebar (nascosta in setup) -->
-        <ChannelSidebar v-if="!isSetupPage" />
+    <!-- Setup layout: scrollable, no sidebar -->
+    <div v-if="isSetupPage" class="min-h-screen w-full flex bg-gray-950">
+        <main class="flex-1 flex flex-col min-w-0">
+            <router-view class="flex-1 overflow-auto" />
+        </main>
+    </div>
 
-        <!-- Main Content -->
+    <!-- Default layout: fixed viewport with sidebar + player -->
+    <div v-else class="h-screen w-screen flex bg-gray-950 overflow-hidden">
+        <ChannelSidebar />
         <main class="flex-1 flex flex-col min-w-0 relative">
-            <!-- Router View -->
             <router-view class="flex-1" />
         </main>
     </div>

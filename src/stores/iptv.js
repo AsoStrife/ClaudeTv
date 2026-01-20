@@ -1,6 +1,7 @@
 import { defineStore } from "pinia";
 import { useLocalStorage } from "@vueuse/core";
 import { ref, computed } from "vue";
+import { httpFetchText } from "@/utils/httpClient";
 import {
     parseM3U,
     groupChannelsByCategory,
@@ -20,6 +21,11 @@ export const useIptvStore = defineStore("iptv", () => {
     const error = ref(null);
     const searchQuery = ref("");
     const expandedCategories = ref([]);
+
+    // ========================================
+    // Cache per tipi di stream funzionanti (persistita)
+    // ========================================
+    const streamTypeCache = useLocalStorage("iptv/streamTypeCache", {});
 
     // Getters
     const channelsByCategory = computed(() => {
@@ -96,13 +102,8 @@ export const useIptvStore = defineStore("iptv", () => {
         error.value = null;
 
         try {
-            const response = await fetch(targetUrl);
-
-            if (!response.ok) {
-                throw new Error(`Errore HTTP: ${response.status}`);
-            }
-
-            const content = await response.text();
+            // Use Tauri HTTP client to bypass CORS
+            const content = await httpFetchText(targetUrl);
             const result = parseM3U(content);
 
             if (result.channels.length === 0) {
@@ -161,13 +162,8 @@ export const useIptvStore = defineStore("iptv", () => {
         error.value = null;
 
         try {
-            const response = await fetch(targetUrl);
-
-            if (!response.ok) {
-                throw new Error(`Errore HTTP: ${response.status}`);
-            }
-
-            const content = await response.text();
+            // Use Tauri HTTP client to bypass CORS
+            const content = await httpFetchText(targetUrl);
             const result = parseM3U(content);
 
             if (result.channels.length === 0) {
@@ -280,6 +276,65 @@ export const useIptvStore = defineStore("iptv", () => {
         activePlaylistId.value = id;
     }
 
+    // ========================================
+    // Stream Type Cache Functions
+    // ========================================
+
+    /**
+     * Salva il tipo di stream funzionante per un URL
+     */
+    function cacheStreamType(url, streamType) {
+        if (!url || !streamType) return;
+        streamTypeCache.value[url] = {
+            type: streamType,
+            lastSuccess: new Date().toISOString(),
+            attempts: (streamTypeCache.value[url]?.attempts || 0) + 1
+        };
+    }
+
+    /**
+     * Ottieni il tipo di stream cached per un URL
+     */
+    function getCachedStreamType(url) {
+        if (!url) return null;
+        const cached = streamTypeCache.value[url];
+        if (cached) {
+            return cached.type;
+        }
+        return null;
+    }
+
+    /**
+     * Rimuovi un URL dalla cache
+     */
+    function removeCachedStreamType(url) {
+        if (url && streamTypeCache.value[url]) {
+            delete streamTypeCache.value[url];
+        }
+    }
+
+    /**
+     * Pulisci tutta la cache dei tipi di stream
+     */
+    function clearStreamTypeCache() {
+        streamTypeCache.value = {};
+    }
+
+    /**
+     * Ottieni statistiche sulla cache
+     */
+    function getStreamCacheStats() {
+        const entries = Object.entries(streamTypeCache.value);
+        const typeCount = {};
+        entries.forEach(([url, data]) => {
+            typeCount[data.type] = (typeCount[data.type] || 0) + 1;
+        });
+        return {
+            totalCached: entries.length,
+            byType: typeCount
+        };
+    }
+
     return {
         // State
         playlists,
@@ -291,6 +346,7 @@ export const useIptvStore = defineStore("iptv", () => {
         error,
         searchQuery,
         expandedCategories,
+        streamTypeCache,
 
         // Getters
         channelsByCategory,
@@ -316,5 +372,12 @@ export const useIptvStore = defineStore("iptv", () => {
         updatePlaylist,
         deletePlaylist,
         setActivePlaylist,
+
+        // Stream Cache
+        cacheStreamType,
+        getCachedStreamType,
+        removeCachedStreamType,
+        clearStreamTypeCache,
+        getStreamCacheStats,
     };
 });

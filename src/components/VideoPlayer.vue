@@ -1,13 +1,16 @@
 <template>
     <div class="relative w-full h-full bg-black flex items-center justify-center">
         <!-- Video Element -->
-        <video ref="videoRef" class="w-full h-full" controls autoplay playsinline crossorigin="use-credentials" />
+        <video ref="videoRef" class="w-full h-full" controls autoplay playsinline />
 
         <!-- Loading Overlay -->
         <div v-if="isBuffering" class="absolute inset-0 flex items-center justify-center bg-black/50">
             <div class="flex flex-col items-center gap-3">
                 <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
                 <span class="text-white text-sm">Caricamento stream...</span>
+                <span v-if="currentAdapterType" class="text-gray-400 text-xs">
+                    Formato: {{ currentAdapterType.toUpperCase() }}
+                </span>
             </div>
         </div>
 
@@ -20,10 +23,16 @@
                 </svg>
                 <h3 class="text-xl font-bold text-white mb-2">Errore di riproduzione</h3>
                 <p class="text-gray-400 text-sm mb-4">{{ playerError }}</p>
-                <button @click="retry"
-                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
-                    Riprova
-                </button>
+                <div class="flex gap-3 justify-center">
+                    <button @click="retry"
+                        class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
+                        Riprova
+                    </button>
+                    <button @click="retryFresh"
+                        class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm">
+                        Riprova (forza)
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -48,7 +57,13 @@
                         class="w-10 h-10 rounded object-contain bg-gray-800" />
                     <div>
                         <h2 class="text-white font-bold">{{ channel.name }}</h2>
-                        <p class="text-gray-400 text-sm">{{ channel.group }}</p>
+                        <div class="flex items-center gap-2">
+                            <p class="text-gray-400 text-sm">{{ channel.group }}</p>
+                            <span v-if="currentAdapterType && !isBuffering"
+                                class="px-2 py-0.5 bg-gray-700 text-gray-300 text-xs rounded">
+                                {{ currentAdapterType.toUpperCase() }}
+                            </span>
+                        </div>
                     </div>
                 </div>
                 <button @click="$emit('close')"
@@ -66,8 +81,9 @@
 
 <script setup>
 import { ref, watch, onMounted, onUnmounted } from 'vue'
-import Hls from 'hls.js'
-import mpegts from 'mpegts.js'
+import { StreamHandler } from '@/utils/streamHandler'
+import { useUiStore } from '@/stores/ui'
+import { useIptvStore } from '@/stores/iptv'
 
 const props = defineProps({
     channel: {
@@ -76,392 +92,148 @@ const props = defineProps({
     }
 })
 
+const uiStore = useUiStore()
+const iptvStore = useIptvStore()
+
 const videoRef = ref(null)
 const isBuffering = ref(false)
 const playerError = ref(null)
+const currentAdapterType = ref(null)
 
-let hls = null
-let mpegtsPlayer = null
+// Istanza StreamHandler
+let streamHandler = null
 
-function destroyHls() {
-    if (hls) {
-        hls.destroy()
-        hls = null
+/**
+ * Inizializza o aggiorna lo StreamHandler con la configurazione corrente
+ */
+function initStreamHandler() {
+    if (streamHandler) {
+        streamHandler.updateConfig(uiStore.streamConfig)
+    } else {
+        streamHandler = new StreamHandler(uiStore.streamConfig)
+
+        // Registra event handlers
+        streamHandler.on('loading', () => {
+            isBuffering.value = true
+            playerError.value = null
+            currentAdapterType.value = null
+        })
+
+        streamHandler.on('buffering', ({ type }) => {
+            isBuffering.value = true
+            currentAdapterType.value = type || null
+        })
+
+        streamHandler.on('ready', ({ type }) => {
+            isBuffering.value = false
+            currentAdapterType.value = type
+            console.log(`[VideoPlayer] Stream ready with adapter: ${type}`)
+        })
+
+        streamHandler.on('success', ({ type, url }) => {
+            isBuffering.value = false
+            currentAdapterType.value = type
+            // Salva nella cache del store
+            iptvStore.cacheStreamType(url, type)
+            console.log(`[VideoPlayer] Stream success: ${type}`)
+        })
+
+        streamHandler.on('adapterError', ({ type, message }) => {
+            console.warn(`[VideoPlayer] Adapter ${type} error: ${message}`)
+            // Non mostrare errore qui, lascia che il fallback provi altri adapter
+        })
+
+        streamHandler.on('error', ({ message }) => {
+            isBuffering.value = false
+            playerError.value = message
+            console.error(`[VideoPlayer] Stream error: ${message}`)
+        })
     }
-}
-
-function destroyMpegts() {
-    if (mpegtsPlayer) {
-        mpegtsPlayer.pause()
-        mpegtsPlayer.unload()
-        mpegtsPlayer.detachMediaElement()
-        mpegtsPlayer.destroy()
-        mpegtsPlayer = null
-    }
-}
-
-function destroyAllPlayers() {
-    destroyHls()
-    destroyMpegts()
 }
 
 /**
- * Determina se l'URL è probabilmente uno stream HLS/live
- * La maggior parte degli stream IPTV sono HLS anche senza estensione .m3u8
+ * Carica lo stream per il canale corrente
  */
-function isLikelyHlsStream(url) {
-    // URL con estensione esplicita HLS
-    if (url.includes('.m3u8') || url.includes('.m3u')) {
-        return true
-    }
-
-    // URL con estensione video standard (mp4, mkv, avi, etc.) - prova prima nativo
-    const videoExtensions = /\.(mp4|mkv|avi|mov|wmv|flv|webm)(\?|$)/i
-    if (videoExtensions.test(url)) {
-        return false
-    }
-
-    // Per tutti gli altri URL (inclusi stream live senza estensione), prova HLS
-    return true
-}
-
-function loadStream(url) {
+async function loadStream(url) {
     if (!url || !videoRef.value) return
 
     console.log('='.repeat(60))
-    console.log('🎬 Attempting to load stream:')
+    console.log('🎬 Loading stream via StreamHandler')
     console.log('URL:', url)
     console.log('Channel:', props.channel?.name || 'Unknown')
+    console.log('Config:', uiStore.streamConfig)
     console.log('='.repeat(60))
 
-    playerError.value = null
-    isBuffering.value = true
-    destroyAllPlayers()
+    // Assicurati che StreamHandler sia inizializzato
+    initStreamHandler()
 
-    const video = videoRef.value
+    // Controlla se abbiamo un tipo cached per questo URL
+    const cachedType = iptvStore.getCachedStreamType(url)
+    if (cachedType) {
+        console.log(`[VideoPlayer] Found cached stream type: ${cachedType}`)
+        // Metti il tipo cached in cima alla fallback chain
+        const config = { ...uiStore.streamConfig }
+        const filteredOrder = config.fallbackOrder.filter(t => t !== cachedType)
+        config.fallbackOrder = [cachedType, ...filteredOrder]
+        streamHandler.updateConfig(config)
+    }
 
-    // Rimuovi listener precedenti e src precedente
-    video.removeAttribute('src')
-    video.load()
-
-    // IMPORTANTE: Pre-fetch per inizializzare sessione/cookie sul server IPTV
-    console.log('→ Pre-fetching URL to establish session/cookies...')
-    fetch(url, {
-        method: 'HEAD', // HEAD invece di GET per non scaricare lo stream
-        mode: 'cors',
-        credentials: 'include', // Includi cookies cross-origin
-        cache: 'no-cache'
-    })
-        .then(response => {
-            console.log('✓ Pre-fetch completed:', {
-                status: response.status,
-                headers: {
-                    'content-type': response.headers.get('content-type'),
-                    'set-cookie': response.headers.get('set-cookie')
-                }
-            })
-            // Ora procedi con il caricamento normale
-            attemptPlayback(url, video)
-        })
-        .catch(err => {
-            console.warn('⚠ Pre-fetch failed, trying playback anyway:', err)
-            // Anche se fallisce, prova lo stesso
-            attemptPlayback(url, video)
-        })
+    // Avvia il caricamento
+    await streamHandler.attach(videoRef.value, url)
 }
 
-function attemptPlayback(url, video) {
-    const useHls = isLikelyHlsStream(url)
-    console.log('Strategy: Try HLS first?', useHls)
-
-    // 1. Prova prima HLS.js (la maggior parte degli stream IPTV)
-    if (useHls && Hls.isSupported()) {
-        console.log('✓ HLS.js is supported, attempting HLS playback...')
-        hls = new Hls({
-            enableWorker: true,
-            lowLatencyMode: true,
-            // Configurazione ottimizzata per live streaming
-            liveSyncDurationCount: 3,
-            liveMaxLatencyDurationCount: 10,
-            liveDurationInfinity: true,
-            // Riprova in caso di errori di rete
-            manifestLoadingMaxRetry: 4,
-            manifestLoadingRetryDelay: 1000,
-            levelLoadingMaxRetry: 4,
-            levelLoadingRetryDelay: 1000,
-            fragLoadingMaxRetry: 6,
-            fragLoadingRetryDelay: 1000,
-            // Abilita credentials per gestire cookies
-            xhrSetup: function (xhr, url) {
-                xhr.withCredentials = true
-            }
-        })
-
-        hls.loadSource(url)
-        hls.attachMedia(video)
-
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-            isBuffering.value = false
-            video.play().catch(() => {
-                // Autoplay blocked, user needs to click
-            })
-        })
-
-        hls.on(Hls.Events.ERROR, (event, data) => {
-            console.error('❌ HLS Error:', {
-                type: data.type,
-                details: data.details,
-                fatal: data.fatal,
-                url: data.url || url,
-                reason: data.reason
-            })
-
-            if (data.fatal) {
-                switch (data.type) {
-                    case Hls.ErrorTypes.NETWORK_ERROR:
-                        // Se è errore di parsing manifest o manifest load error, non è HLS -> prova MPEGTS
-                        if (data.details === 'manifestParsingError' ||
-                            data.details === 'manifestLoadError' ||
-                            data.details.includes('manifest')) {
-                            console.log('→ Not an HLS stream, trying MPEGTS...')
-                            destroyHls()
-                            loadMpegtsStream(url)
-                            return
-                        }
-                        // Altri errori di rete, prova comunque MPEGTS
-                        console.log('→ HLS network error, trying MPEGTS fallback...')
-                        destroyHls()
-                        loadMpegtsStream(url)
-                        return
-                    case Hls.ErrorTypes.MEDIA_ERROR:
-                        console.log('→ Attempting to recover from media error...')
-                        hls.recoverMediaError()
-                        return
-                    default:
-                        playerError.value = 'Impossibile riprodurre lo stream.'
-                        destroyHls()
-                }
-                isBuffering.value = false
-            }
-        })
-
-        // Gestisci errore video element
-        video.onerror = () => {
-            if (hls) {
-                playerError.value = 'Errore nel caricamento del video.'
-                isBuffering.value = false
-            }
-        }
-
-    } else if (video.canPlayType('application/vnd.apple.mpegurl') && useHls) {
-        // Native HLS support (Safari)
-        loadNativeVideo(url)
-    } else {
-        // Direct video URL (MP4, etc.) o fallback
-        loadNativeVideo(url)
+/**
+ * Riprova con lo stream corrente
+ */
+async function retry() {
+    if (props.channel?.url) {
+        await loadStream(props.channel.url)
     }
 }
 
 /**
- * Carica stream MPEGTS con mpegts.js
- * Per stream TS/FLV live diretti (tipici IPTV)
+ * Riprova forzando un nuovo rilevamento (ignora cache)
  */
-function loadMpegtsStream(url) {
-    const video = videoRef.value
-    if (!video) return
-
-    if (!mpegts.isSupported()) {
-        console.warn('MPEGTS not supported, trying native video...')
-        loadNativeVideo(url)
-        return
-    }
-
-    // Prova prima come MPEGTS, poi come FLV se fallisce
-    tryMpegtsType(url, 'mpegts')
-}
-
-function tryMpegtsType(url, streamType) {
-    const video = videoRef.value
-    if (!video) return
-
-    console.log(`→ Trying to load as ${streamType.toUpperCase()} stream...`)
-    console.log('   URL:', url)
-
-    try {
-        mpegtsPlayer = mpegts.createPlayer({
-            type: streamType,  // 'mpegts' o 'flv'
-            isLive: true,
-            url: url,
-            // Alcuni server IPTV richiedono questi header
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
-            }
-        }, {
-            enableWorker: true,
-            enableStashBuffer: true,
-            stashInitialSize: 384,  // KB - aumentato
-            autoCleanupSourceBuffer: true,
-            autoCleanupMaxBackwardDuration: 60,
-            autoCleanupMinBackwardDuration: 30,
-            liveBufferLatencyChasing: true,
-            liveBufferLatencyMaxLatency: 5,
-            liveBufferLatencyMinRemain: 1,
-            lazyLoad: false,
-            lazyLoadMaxDuration: 0,
-            deferLoadAfterSourceOpen: false,
-        })
-
-        mpegtsPlayer.attachMediaElement(video)
-
-        // Event handlers
-        mpegtsPlayer.on(mpegts.Events.ERROR, (errType, errDetail) => {
-            console.error(`${streamType.toUpperCase()} Error:`, errType, errDetail)
-
-            if (errType === mpegts.ErrorTypes.NETWORK_ERROR) {
-                // Se è MPEGTS che fallisce, prova FLV
-                if (streamType === 'mpegts') {
-                    console.log('MPEGTS failed, trying FLV...')
-                    destroyMpegts()
-                    tryMpegtsType(url, 'flv')
-                    return
-                }
-                // Se anche FLV fallisce, prova native
-                console.log('FLV failed, trying native video...')
-                destroyMpegts()
-                loadNativeVideo(url)
-            } else {
-                playerError.value = `Errore stream ${streamType}: ${errDetail || errType}`
-                isBuffering.value = false
-            }
-        })
-
-        mpegtsPlayer.on(mpegts.Events.LOADING_COMPLETE, () => {
-            console.log(`${streamType.toUpperCase()} loading complete`)
-            isBuffering.value = false
-        })
-
-        mpegtsPlayer.on(mpegts.Events.METADATA_ARRIVED, (metadata) => {
-            console.log(`${streamType.toUpperCase()} metadata arrived:`, metadata)
-            isBuffering.value = false
-        })
-
-        mpegtsPlayer.on(mpegts.Events.MEDIA_INFO, (mediaInfo) => {
-            console.log(`${streamType.toUpperCase()} media info:`, mediaInfo)
-        })
-
-        mpegtsPlayer.on(mpegts.Events.STATISTICS_INFO, (stats) => {
-            // Log periodico delle statistiche (commentato per non spammare)
-            // console.log('Stats:', stats)
-        })
-
-        // Inizia il caricamento
-        mpegtsPlayer.load()
-
-        // Timeout per rilevare se non riceve dati
-        const loadTimeout = setTimeout(() => {
-            if (isBuffering.value && mpegtsPlayer) {
-                console.warn(`${streamType.toUpperCase()} timeout - no data received`)
-                destroyMpegts()
-
-                // Se era MPEGTS, prova FLV
-                if (streamType === 'mpegts') {
-                    tryMpegtsType(url, 'flv')
-                } else {
-                    // Altrimenti prova native
-                    loadNativeVideo(url)
-                }
-            }
-        }, 8000) // 8 secondi di timeout
-
-        // Quando il video è pronto, fai play e cancella timeout
-        video.addEventListener('loadeddata', () => {
-            clearTimeout(loadTimeout)
-            console.log(`${streamType.toUpperCase()} video ready, attempting play...`)
-            isBuffering.value = false
-            video.play().catch((err) => {
-                console.warn('Autoplay blocked:', err)
-            })
-        }, { once: true })
-
-    } catch (err) {
-        console.error(`Failed to create ${streamType.toUpperCase()} player:`, err)
-
-        // Se MPEGTS fallisce, prova FLV
-        if (streamType === 'mpegts') {
-            tryMpegtsType(url, 'flv')
-        } else {
-            loadNativeVideo(url)
-        }
-    }
-}
-
-function loadNativeVideo(url) {
-    const video = videoRef.value
-    if (!video) return
-
-    console.log('→ Trying native HTML5 video playback...')
-    video.src = url
-
-    const onLoadedData = () => {
-        console.log('✓ Native video loaded successfully')
-        isBuffering.value = false
-        video.play().catch((err) => {
-            console.warn('Autoplay blocked by browser:', err)
-        })
-    }
-
-    const onError = (e) => {
-        const errorDetails = video.error ? {
-            code: video.error.code,
-            message: video.error.message,
-            MEDIA_ERR_ABORTED: video.error.code === 1,
-            MEDIA_ERR_NETWORK: video.error.code === 2,
-            MEDIA_ERR_DECODE: video.error.code === 3,
-            MEDIA_ERR_SRC_NOT_SUPPORTED: video.error.code === 4
-        } : 'Unknown error'
-
-        console.error('❌ Native video error:', errorDetails)
-        console.error('Stream URL:', url)
-
-        let errorMsg = 'Impossibile caricare il video.'
-        if (video.error?.code === 2) {
-            errorMsg += ' Errore di rete o CORS.'
-        } else if (video.error?.code === 4) {
-            errorMsg += ' Formato non supportato.'
-        } else if (video.error?.code === 3) {
-            errorMsg += ' Errore di decodifica.'
-        }
-
-        playerError.value = errorMsg
-        isBuffering.value = false
-        video.removeEventListener('loadeddata', onLoadedData)
-        video.removeEventListener('canplay', onLoadedData)
-    }
-
-    video.addEventListener('loadeddata', onLoadedData, { once: true })
-    video.addEventListener('canplay', onLoadedData, { once: true })
-    video.addEventListener('error', onError, { once: true })
-
-    video.load()
-}
-
-function retry() {
+async function retryFresh() {
     if (props.channel?.url) {
-        loadStream(props.channel.url)
+        // Rimuovi dalla cache per forzare nuova detection
+        iptvStore.removeCachedStreamType(props.channel.url)
+        if (streamHandler) {
+            streamHandler.removeFromCache(props.channel.url)
+        }
+        await loadStream(props.channel.url)
     }
 }
 
-// Watch for channel changes
-watch(() => props.channel, (newChannel) => {
+/**
+ * Pulisce lo stream corrente
+ */
+async function destroyStream() {
+    if (streamHandler) {
+        await streamHandler.destroy()
+    }
+    currentAdapterType.value = null
+    if (videoRef.value) {
+        videoRef.value.removeAttribute('src')
+        videoRef.value.load()
+    }
+}
+
+// Watch per cambi canale
+watch(() => props.channel, async (newChannel) => {
     if (newChannel?.url) {
-        loadStream(newChannel.url)
+        await loadStream(newChannel.url)
     } else {
-        destroyAllPlayers()
-        if (videoRef.value) {
-            videoRef.value.src = ''
-        }
+        await destroyStream()
     }
 }, { immediate: true })
+
+// Watch per cambi configurazione stream
+watch(() => uiStore.streamConfig, (newConfig) => {
+    if (streamHandler) {
+        streamHandler.updateConfig(newConfig)
+    }
+}, { deep: true })
 
 onMounted(() => {
     if (props.channel?.url) {
@@ -469,7 +241,8 @@ onMounted(() => {
     }
 })
 
-onUnmounted(() => {
-    destroyAllPlayers()
+onUnmounted(async () => {
+    await destroyStream()
+    streamHandler = null
 })
 </script>

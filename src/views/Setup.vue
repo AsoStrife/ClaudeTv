@@ -175,75 +175,77 @@ function handleCancel() {
 </script>
 
 <template>
-    <div class="h-screen w-screen flex items-center justify-center bg-gray-950">
-        <div class="w-full max-w-md p-8">
+    <div class="w-full h-full flex items-center justify-center bg-gray-950 overflow-y-auto">
+        <div class="w-full max-w-md p-3 sm:p-6 md:p-8 my-4">
             <!-- Logo/Header -->
-            <div class="text-center mb-8">
-                <h1 class="text-4xl font-bold text-blue-400 mb-2">ClaudeTV</h1>
-                <p class="text-gray-400">{{ isEditing ? 'Modifica playlist' : 'Aggiungi nuova playlist' }}</p>
+            <div class="text-center mb-6 sm:mb-8 px-1">
+                <h1 class="text-xl sm:text-4xl font-bold text-blue-400 mb-1 break-words leading-tight">ClaudeTV</h1>
+                <p class="text-xs sm:text-base text-gray-400 break-words leading-snug">
+                    {{ isEditing ? 'Modifica playlist' : 'Aggiungi nuova playlist' }}
+                </p>
             </div>
 
             <!-- Form -->
-            <div class="bg-gray-900 rounded-xl shadow-2xl p-8 border border-gray-800">
-                <form @submit.prevent="handleSave" class="space-y-6">
+            <div class="bg-gray-900 rounded-xl shadow-2xl p-4 sm:p-6 md:p-8 border border-gray-800">
+                <form @submit.prevent="handleSave" class="space-y-4 sm:space-y-6">
                     <!-- Nome Playlist -->
                     <div>
-                        <label for="playlist-name" class="block text-sm font-medium text-gray-300 mb-2">
+                        <label for="playlist-name" class="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
                             Nome Playlist
                         </label>
                         <input id="playlist-name" v-model="playlistName" type="text" required
                             placeholder="La mia playlist IPTV"
-                            class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all" />
+                            class="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800 border border-gray-700 rounded-lg text-sm sm:text-base text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all" />
                     </div>
 
                     <!-- URL Playlist -->
                     <div>
-                        <label for="playlist-url" class="block text-sm font-medium text-gray-300 mb-2">
+                        <label for="playlist-url" class="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
                             URL Playlist M3U
                         </label>
                         <input id="playlist-url" v-model="playlistUrl" type="url" required
                             placeholder="http://example.com/playlist.m3u"
-                            class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all" />
+                            class="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800 border border-gray-700 rounded-lg text-sm sm:text-base text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all" />
                     </div>
 
                     <!-- Username -->
                     <div>
-                        <label for="username" class="block text-sm font-medium text-gray-300 mb-2">
+                        <label for="username" class="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
                             Username <span class="text-gray-500 text-xs">(opzionale)</span>
                         </label>
                         <input id="username" v-model="username" type="text" placeholder="Username"
-                            class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all" />
+                            class="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800 border border-gray-700 rounded-lg text-sm sm:text-base text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all" />
                     </div>
 
                     <!-- Password -->
                     <div>
-                        <label for="password" class="block text-sm font-medium text-gray-300 mb-2">
+                        <label for="password" class="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
                             Password <span class="text-gray-500 text-xs">(opzionale)</span>
                         </label>
                         <input id="password" v-model="password" type="password" placeholder="Password"
-                            class="w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all" />
+                            class="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800 border border-gray-700 rounded-lg text-sm sm:text-base text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all" />
                     </div>
 
                     <!-- Type Parameter -->
                     <div>
-                        <label class="flex items-center gap-3 cursor-pointer">
+                        <label class="flex items-center gap-2 sm:gap-3 cursor-pointer">
                             <input v-model="useType" type="checkbox"
-                                class="w-5 h-5 bg-gray-800 border-gray-700 rounded text-blue-600 focus:ring-2 focus:ring-blue-500" />
-                            <span class="text-sm font-medium text-gray-300">Aggiungi parametro Type</span>
+                                class="w-4 h-4 sm:w-5 sm:h-5 bg-gray-800 border-gray-700 rounded text-blue-600 focus:ring-2 focus:ring-blue-500" />
+                            <span class="text-xs sm:text-sm font-medium text-gray-300">Aggiungi parametro Type</span>
                         </label>
                         <input v-if="useType" v-model="type" type="text" placeholder="m3u_plus"
-                            class="mt-2 w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all" />
+                            class="mt-2 w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800 border border-gray-700 rounded-lg text-sm sm:text-base text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all" />
                     </div>
 
                     <!-- Output Parameter -->
                     <div>
-                        <label class="flex items-center gap-3 cursor-pointer">
+                        <label class="flex items-center gap-2 sm:gap-3 cursor-pointer">
                             <input v-model="useOutput" type="checkbox"
-                                class="w-5 h-5 bg-gray-800 border-gray-700 rounded text-blue-600 focus:ring-2 focus:ring-blue-500" />
-                            <span class="text-sm font-medium text-gray-300">Aggiungi parametro Output</span>
+                                class="w-4 h-4 sm:w-5 sm:h-5 bg-gray-800 border-gray-700 rounded text-blue-600 focus:ring-2 focus:ring-blue-500" />
+                            <span class="text-xs sm:text-sm font-medium text-gray-300">Aggiungi parametro Output</span>
                         </label>
                         <input v-if="useOutput" v-model="output" type="text" placeholder="mpegts"
-                            class="mt-2 w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all" />
+                            class="mt-2 w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800 border border-gray-700 rounded-lg text-sm sm:text-base text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all" />
                     </div>
 
                     <!-- Error message -->
@@ -259,9 +261,9 @@ function handleCancel() {
 
                     <!-- Submit Button -->
                     <button type="submit" :disabled="isLoading"
-                        class="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white font-semibold rounded-lg transition-all shadow-lg hover:shadow-xl disabled:shadow-none">
+                        class="w-full px-4 sm:px-6 py-2 sm:py-3 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-700 disabled:cursor-not-allowed text-white text-sm sm:text-base font-semibold rounded-lg transition-all shadow-lg hover:shadow-xl disabled:shadow-none">
                         <span v-if="isLoading" class="flex items-center justify-center gap-2">
-                            <svg class="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
+                            <svg class="animate-spin h-4 w-4 sm:h-5 sm:w-5" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
                                     stroke-width="4"></circle>
                                 <path class="opacity-75" fill="currentColor"
@@ -275,7 +277,7 @@ function handleCancel() {
 
                     <!-- Cancel Button -->
                     <button type="button" @click="handleCancel"
-                        class="w-full px-6 py-3 bg-gray-700 hover:bg-gray-600 text-white font-semibold rounded-lg transition-all">
+                        class="w-full px-4 sm:px-6 py-2 sm:py-3 bg-gray-700 hover:bg-gray-600 text-white text-sm sm:text-base font-semibold rounded-lg transition-all">
                         Annulla
                     </button>
                 </form>
