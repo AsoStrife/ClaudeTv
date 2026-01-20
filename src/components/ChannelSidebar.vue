@@ -5,25 +5,33 @@
 			<!-- Header -->
 			<div class="flex items-center justify-between mb-4">
 				<h1 class="text-xl font-bold text-blue-400">ClaudeTV</h1>
+				<div class="flex items-center gap-2">
+					<!-- Settings Button -->
+					<button
+						@click="goToSettings"
+						class="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded transition-colors"
+						title="Impostazioni"
+					>
+						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+						</svg>
+					</button>
+					<!-- Toggle Sidebar Button -->
+					<button
+						@click="uiStore.toggleSidebar"
+						class="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded transition-colors"
+						title="Nascondi sidebar"
+					>
+						<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
+						</svg>
+					</button>
+				</div>
 			</div>
 
-			<!-- Form URL Playlist -->
-			<form @submit.prevent="handleLoadPlaylist" class="space-y-2">
-				<input v-model="urlInput" type="url" placeholder="Inserisci URL playlist M3U..."
-					class="w-full px-3 py-2 bg-gray-800 border border-gray-600 rounded-lg text-sm text-white placeholder-gray-400 focus:outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
-				<button type="submit" :disabled="isLoading"
-					class="w-full px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white font-medium rounded-lg text-sm transition-colors">
-					{{ isLoading ? 'Caricamento...' : 'Carica Playlist' }}
-				</button>
-			</form>
-
-			<!-- Error message -->
-			<p v-if="error" class="mt-2 text-sm text-red-400">
-				⚠️ {{ error }}
-			</p>
-
 			<!-- Stats -->
-			<div v-if="hasPlaylist" class="mt-3 text-xs text-gray-400">
+			<div v-if="hasPlaylist" class="text-xs text-gray-400">
 				{{ filteredChannelsCount }} / {{ totalChannels }} canali
 			</div>
 		</div>
@@ -105,20 +113,19 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue'
+import { ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
+import { useRouter } from 'vue-router'
 import { useIptvStore } from '@/stores/iptv'
 import { useUiStore } from '@/stores/ui'
 
+const router = useRouter()
 const iptvStore = useIptvStore()
 const uiStore = useUiStore()
 
 const {
-	playlistUrl,
 	categories,
 	selectedChannel,
-	isLoading,
-	error,
 	hasPlaylist,
 	totalChannels,
 	filteredChannelsCount,
@@ -127,16 +134,7 @@ const {
 
 const { isSidebarCollapsed } = storeToRefs(uiStore)
 
-const urlInput = ref('')
 const searchInput = ref('')
-
-// Sync URL input with store
-onMounted(() => {
-	urlInput.value = playlistUrl.value
-
-	// Non serve auto-load, i dati sono già in localStorage e caricati automaticamente
-	// Lo store Pinia + VueUse li carica da solo al mount
-})
 
 // Debounce search
 let searchTimeout = null
@@ -147,13 +145,13 @@ watch(searchInput, (value) => {
 	}, 300)
 })
 
-function handleLoadPlaylist() {
-	iptvStore.loadPlaylist(urlInput.value)
-}
-
 function clearSearch() {
 	searchInput.value = ''
 	iptvStore.setSearchQuery('')
+}
+
+function goToSettings() {
+	router.push('/settings')
 }
 
 // Expose store methods

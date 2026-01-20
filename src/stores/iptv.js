@@ -9,7 +9,8 @@ import {
 
 export const useIptvStore = defineStore("iptv", () => {
   // Stato persistito in localStorage
-  const playlistUrl = useLocalStorage("iptv/playlistUrl", "");
+  const playlists = useLocalStorage("iptv/playlists", []);
+  const activePlaylistId = useLocalStorage("iptv/activePlaylistId", null);
   const channels = useLocalStorage("iptv/channels", []);
   const categories = useLocalStorage("iptv/categories", []);
 
@@ -32,16 +33,43 @@ export const useIptvStore = defineStore("iptv", () => {
 
   const hasPlaylist = computed(() => channels.value.length > 0);
 
+  const isConfigured = computed(() => {
+    return playlists.value.length > 0;
+  });
+
+  const activePlaylist = computed(() => {
+    return playlists.value.find(p => p.id === activePlaylistId.value) || null;
+  });
+
   const filteredChannelsCount = computed(() => {
     return filterChannels(channels.value, searchQuery.value).length;
   });
 
   // Actions
-  async function loadPlaylist(url = null) {
-    const targetUrl = url || playlistUrl.value;
+  async function loadPlaylist(playlistIdOrUrl = null) {
+    let targetUrl;
+    let id;
+
+    // Se è un URL diretto (inizia con http), usalo direttamente
+    if (typeof playlistIdOrUrl === 'string' && playlistIdOrUrl.startsWith('http')) {
+      targetUrl = playlistIdOrUrl;
+      // Cerca la playlist per URL per trovare l'ID
+      const existingPlaylist = playlists.value.find(p => p.url === targetUrl);
+      id = existingPlaylist?.id || activePlaylistId.value;
+    } else {
+      // Altrimenti cerca per ID
+      id = playlistIdOrUrl || activePlaylistId.value;
+      const playlist = playlists.value.find(p => p.id === id);
+
+      if (!playlist) {
+        error.value = "Playlist non trovata";
+        return false;
+      }
+      targetUrl = playlist.url;
+    }
 
     if (!targetUrl) {
-      error.value = "Inserisci un URL valido";
+      error.value = "URL playlist non valido";
       return false;
     }
 
@@ -64,7 +92,9 @@ export const useIptvStore = defineStore("iptv", () => {
 
       channels.value = result.channels;
       categories.value = result.categories;
-      playlistUrl.value = targetUrl;
+      if (id) {
+        activePlaylistId.value = id;
+      }
 
       // Chiudi tutte le categorie di default quando si carica una playlist
       expandedCategories.value = [];
@@ -120,9 +150,54 @@ export const useIptvStore = defineStore("iptv", () => {
     expandedCategories.value = [];
   }
 
+  function addPlaylist(name, url, username = "", password = "") {
+    const newPlaylist = {
+      id: Date.now().toString(),
+      name,
+      url,
+      username,
+      password,
+      createdAt: new Date().toISOString(),
+    };
+    playlists.value.push(newPlaylist);
+    return newPlaylist.id;
+  }
+
+  function updatePlaylist(id, data) {
+    const index = playlists.value.findIndex(p => p.id === id);
+    if (index !== -1) {
+      playlists.value[index] = {
+        ...playlists.value[index],
+        ...data,
+        updatedAt: new Date().toISOString(),
+      };
+      return true;
+    }
+    return false;
+  }
+
+  function deletePlaylist(id) {
+    const index = playlists.value.findIndex(p => p.id === id);
+    if (index !== -1) {
+      playlists.value.splice(index, 1);
+      // Se cancello la playlist attiva, pulisco tutto
+      if (activePlaylistId.value === id) {
+        activePlaylistId.value = null;
+        clearPlaylist();
+      }
+      return true;
+    }
+    return false;
+  }
+
+  function setActivePlaylist(id) {
+    activePlaylistId.value = id;
+  }
+
   return {
     // State
-    playlistUrl,
+    playlists,
+    activePlaylistId,
     channels,
     categories,
     selectedChannel,
@@ -135,6 +210,8 @@ export const useIptvStore = defineStore("iptv", () => {
     channelsByCategory,
     totalChannels,
     hasPlaylist,
+    isConfigured,
+    activePlaylist,
     filteredChannelsCount,
 
     // Actions
@@ -147,5 +224,9 @@ export const useIptvStore = defineStore("iptv", () => {
     collapseAllCategories,
     setSearchQuery,
     clearPlaylist,
+    addPlaylist,
+    updatePlaylist,
+    deletePlaylist,
+    setActivePlaylist,
   };
 });
