@@ -14,27 +14,27 @@
 async function getInvoke() {
     console.log('[httpClient] Checking Tauri availability...');
     console.log('[httpClient] window.__TAURI_INTERNALS__:', typeof window.__TAURI_INTERNALS__);
-    
+
     // Check if we're in Tauri context
     if (!window.__TAURI_INTERNALS__) {
         const error = 'Tauri API not available. This app must be run with "npm run tauri:dev". Regular browser mode is not supported.';
         console.error('[httpClient]', error);
         throw new Error(error);
     }
-    
+
     console.log('[httpClient] Tauri internals found, importing invoke...');
-    
+
     // Import invoke dynamically to ensure Tauri is ready
     const { invoke } = await import('@tauri-apps/api/core');
-    
+
     console.log('[httpClient] invoke imported:', typeof invoke);
-    
+
     if (typeof invoke !== 'function') {
         const error = 'invoke is not a function after import';
         console.error('[httpClient]', error);
         throw new Error(error);
     }
-    
+
     return invoke;
 }
 
@@ -49,7 +49,7 @@ async function getInvoke() {
  */
 export async function httpFetch(url, options = {}) {
     console.log('[httpClient] httpFetch called with URL:', url);
-    
+
     const invoke = await getInvoke();
     const {
         method = 'GET',
@@ -77,7 +77,7 @@ export async function httpFetch(url, options = {}) {
     try {
         console.log('[httpClient] Calling invoke with command: http_fetch');
         console.log('[httpClient] Parameters:', { url, method: method.toUpperCase(), hasHeaders: headerArray.length > 0, hasBody: !!bodyString });
-        
+
         const response = await invoke('http_fetch', {
             url,
             method: method.toUpperCase(),
