@@ -12,6 +12,7 @@ export const useIptvStore = defineStore("iptv", () => {
     // Stato persistito in localStorage
     const playlists = useLocalStorage("iptv/playlists", []);
     const activePlaylistId = useLocalStorage("iptv/activePlaylistId", null);
+    const favoriteChannelIds = useLocalStorage("iptv/favoriteChannelIds", []);
 
     // Stato reattivo (non persistito)
     const channels = ref([]);
@@ -30,7 +31,17 @@ export const useIptvStore = defineStore("iptv", () => {
     // Getters
     const channelsByCategory = computed(() => {
         const filtered = filterChannels(channels.value, searchQuery.value);
-        return groupChannelsByCategory(filtered);
+        const grouped = groupChannelsByCategory(filtered);
+
+        // Aggiungi categoria preferiti se ci sono canali preferiti
+        if (hasFavorites.value && !searchQuery.value) {
+            const favChannels = channels.value.filter(channel =>
+                favoriteChannelIds.value.includes(channel.id)
+            );
+            grouped['⭐ Preferiti'] = favChannels;
+        }
+
+        return grouped;
     });
 
     const totalChannels = computed(() => channels.value.length);
@@ -49,14 +60,31 @@ export const useIptvStore = defineStore("iptv", () => {
         return filterChannels(channels.value, searchQuery.value).length;
     });
 
+    const favoriteChannels = computed(() => {
+        return channels.value.filter(channel => favoriteChannelIds.value.includes(channel.id));
+    });
+
+    const hasFavorites = computed(() => favoriteChannels.value.length > 0);
+
     const visibleCategories = computed(() => {
-        if (!searchQuery.value) {
-            return categories.value;
+        const cats = [];
+
+        // Aggiungi "Preferiti" come prima categoria se ci sono preferiti
+        if (!searchQuery.value && hasFavorites.value) {
+            cats.push('⭐ Preferiti');
         }
-        // Restituisce solo le categorie che hanno almeno un canale filtrato
-        return Object.keys(channelsByCategory.value).filter(
-            category => channelsByCategory.value[category]?.length > 0
-        );
+
+        if (!searchQuery.value) {
+            cats.push(...categories.value);
+        } else {
+            // Restituisce solo le categorie che hanno almeno un canale filtrato
+            const filtered = Object.keys(channelsByCategory.value).filter(
+                category => channelsByCategory.value[category]?.length > 0
+            );
+            cats.push(...filtered);
+        }
+
+        return cats;
     });
 
     // Helper function per costruire URL con parametri
@@ -222,6 +250,40 @@ export const useIptvStore = defineStore("iptv", () => {
         searchQuery.value = query;
     }
 
+    // ========================================
+    // Favorites Functions
+    // ========================================
+
+    function toggleFavorite(channelId) {
+        const index = favoriteChannelIds.value.indexOf(channelId);
+        if (index === -1) {
+            favoriteChannelIds.value.push(channelId);
+        } else {
+            favoriteChannelIds.value.splice(index, 1);
+        }
+    }
+
+    function isFavorite(channelId) {
+        return favoriteChannelIds.value.includes(channelId);
+    }
+
+    function addToFavorites(channelId) {
+        if (!favoriteChannelIds.value.includes(channelId)) {
+            favoriteChannelIds.value.push(channelId);
+        }
+    }
+
+    function removeFromFavorites(channelId) {
+        const index = favoriteChannelIds.value.indexOf(channelId);
+        if (index !== -1) {
+            favoriteChannelIds.value.splice(index, 1);
+        }
+    }
+
+    function clearFavorites() {
+        favoriteChannelIds.value = [];
+    }
+
     function clearPlaylist() {
         channels.value = [];
         categories.value = [];
@@ -347,6 +409,7 @@ export const useIptvStore = defineStore("iptv", () => {
         searchQuery,
         expandedCategories,
         streamTypeCache,
+        favoriteChannelIds,
 
         // Getters
         channelsByCategory,
@@ -356,6 +419,8 @@ export const useIptvStore = defineStore("iptv", () => {
         activePlaylist,
         filteredChannelsCount,
         visibleCategories,
+        favoriteChannels,
+        hasFavorites,
 
         // Actions
         loadPlaylist,
@@ -372,6 +437,13 @@ export const useIptvStore = defineStore("iptv", () => {
         updatePlaylist,
         deletePlaylist,
         setActivePlaylist,
+
+        // Favorites
+        toggleFavorite,
+        isFavorite,
+        addToFavorites,
+        removeFromFavorites,
+        clearFavorites,
 
         // Stream Cache
         cacheStreamType,

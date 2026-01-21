@@ -125,10 +125,15 @@
                 <!-- Channels in Category -->
                 <div v-if="isCategoryExpanded(category)" class="bg-gray-950">
                     <button v-for="channel in channelsByCategory[category]" :key="channel.id"
-                        @click="selectChannel(channel)"
-                        class="w-full px-4 py-2 pl-6 flex items-center gap-3 hover:bg-gray-800 transition-colors text-left"
+                        @click="selectChannel(channel)" @contextmenu="showContextMenu($event, channel)"
+                        class="channel-item w-full px-4 py-2 pl-6 flex items-center justify-between hover:bg-gray-800 transition-colors text-left"
                         :class="{ 'bg-blue-900/50 border-l-2 border-blue-500': selectedChannel?.id === channel.id }">
-                        <span class="text-sm truncate">{{ channel.name }}</span>
+                        <span class="text-sm truncate flex-1">{{ channel.name }}</span>
+                        <svg v-if="isFavorite(channel.id)" class="w-4 h-4 text-yellow-400 flex-shrink-0 ml-2"
+                            fill="currentColor" viewBox="0 0 20 20">
+                            <path
+                                d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
                     </button>
                 </div>
             </div>
@@ -139,10 +144,15 @@
             class="flex-1 overflow-y-auto sidebar-scroll">
             <div v-for="category in visibleCategories" :key="category">
                 <button v-for="channel in channelsByCategory[category]" :key="channel.id"
-                    @click="selectChannel(channel)"
-                    class="w-full px-4 py-2 flex items-center gap-3 hover:bg-gray-800 transition-colors text-left"
+                    @click="selectChannel(channel)" @contextmenu="showContextMenu($event, channel)"
+                    class="channel-item w-full px-4 py-2 flex items-center justify-between hover:bg-gray-800 transition-colors text-left"
                     :class="{ 'bg-blue-900/50 border-l-2 border-blue-500': selectedChannel?.id === channel.id }">
-                    <span class="text-sm truncate">{{ channel.name }}</span>
+                    <span class="text-sm truncate flex-1">{{ channel.name }}</span>
+                    <svg v-if="isFavorite(channel.id)" class="w-4 h-4 text-yellow-400 flex-shrink-0 ml-2"
+                        fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                            d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
                 </button>
             </div>
         </div>
@@ -157,6 +167,28 @@
                 <p class="text-sm">Inserisci l'URL di una playlist M3U per iniziare</p>
             </div>
         </div>
+
+        <!-- Context Menu -->
+        <Teleport to="body">
+            <div v-if="contextMenu.show" :style="{ top: contextMenu.y + 'px', left: contextMenu.x + 'px' }"
+                class="fixed z-50 bg-gray-800 border border-gray-700 rounded-lg shadow-lg py-1 min-w-[160px]">
+                <button @click="toggleChannelFavorite"
+                    class="w-full px-4 py-2 text-sm text-left text-white hover:bg-gray-700 transition-colors flex items-center gap-2">
+                    <svg v-if="contextMenu.channel && isFavorite(contextMenu.channel.id)"
+                        class="w-4 h-4 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                            d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                    <svg v-else class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 20 20">
+                        <path
+                            d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"
+                            stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
+                    </svg>
+                    <span v-if="contextMenu.channel && isFavorite(contextMenu.channel.id)">Rimuovi da preferiti</span>
+                    <span v-else>Aggiungi a preferiti</span>
+                </button>
+            </div>
+        </Teleport>
     </aside>
 </template>
 
@@ -180,13 +212,20 @@ const {
     filteredChannelsCount,
     channelsByCategory,
     isLoading,
-    activePlaylist
+    activePlaylist,
+    hasFavorites
 } = storeToRefs(iptvStore)
 
 const { isSidebarCollapsed } = storeToRefs(uiStore)
 
 const searchInput = ref('')
 const isSearching = ref(false)
+const contextMenu = ref({
+    show: false,
+    x: 0,
+    y: 0,
+    channel: null
+})
 
 // Debounce search
 let searchTimeout = null
@@ -213,12 +252,44 @@ function goToHome() {
     router.push('/')
 }
 
+function showContextMenu(event, channel) {
+    event.preventDefault()
+    contextMenu.value = {
+        show: true,
+        x: event.clientX,
+        y: event.clientY,
+        channel
+    }
+}
+
+function closeContextMenu() {
+    contextMenu.value.show = false
+}
+
+function toggleChannelFavorite() {
+    if (contextMenu.value.channel) {
+        iptvStore.toggleFavorite(contextMenu.value.channel.id)
+    }
+    closeContextMenu()
+}
+
+// Chiudi il menu contestuale quando si clicca fuori
+if (typeof window !== 'undefined') {
+    window.addEventListener('click', closeContextMenu)
+    window.addEventListener('contextmenu', (e) => {
+        if (!e.target.closest('.channel-item')) {
+            closeContextMenu()
+        }
+    })
+}
+
 // Expose store methods
 const {
     selectChannel,
     toggleCategory,
     isCategoryExpanded,
     expandAllCategories,
-    collapseAllCategories
+    collapseAllCategories,
+    isFavorite
 } = iptvStore
 </script>
