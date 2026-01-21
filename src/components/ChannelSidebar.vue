@@ -96,23 +96,15 @@
         </div>
 
         <!-- Skeleton Loader -->
-        <div v-if="isLoading" class="flex-1 overflow-y-auto p-4 space-y-4">
-            <!-- Skeleton Categories -->
-            <div v-for="i in 5" :key="i" class="animate-pulse">
-                <!-- Skeleton Category Header -->
-                <div class="flex items-center justify-between px-4 py-3 bg-gray-800 rounded mb-2">
-                    <div class="h-4 bg-gray-700 rounded w-32"></div>
-                    <div class="h-4 bg-gray-700 rounded w-8"></div>
-                </div>
-                <!-- Skeleton Channels -->
-                <div class="space-y-2 ml-4">
-                    <div v-for="j in 3" :key="j" class="h-8 bg-gray-800/50 rounded"></div>
-                </div>
+        <div v-if="isLoading || isSearching" class="flex-1 overflow-y-auto p-4">
+            <div class="space-y-2 animate-pulse">
+                <div v-for="i in 12" :key="i" class="h-10 bg-gray-800 rounded"></div>
             </div>
         </div>
 
-        <!-- Channel List -->
-        <div v-if="hasPlaylist && !isLoading" class="flex-1 overflow-y-auto sidebar-scroll">
+        <!-- Channel List with Categories (when no search) -->
+        <div v-if="hasPlaylist && !isLoading && !isSearching && !searchInput"
+            class="flex-1 overflow-y-auto sidebar-scroll">
             <div v-for="category in visibleCategories" :key="category" class="border-b border-gray-800">
                 <!-- Category Header -->
                 <button @click="toggleCategory(category)"
@@ -139,6 +131,19 @@
                         <span class="text-sm truncate">{{ channel.name }}</span>
                     </button>
                 </div>
+            </div>
+        </div>
+
+        <!-- Flat Channel List (when searching) -->
+        <div v-if="hasPlaylist && !isLoading && !isSearching && searchInput"
+            class="flex-1 overflow-y-auto sidebar-scroll">
+            <div v-for="category in visibleCategories" :key="category">
+                <button v-for="channel in channelsByCategory[category]" :key="channel.id"
+                    @click="selectChannel(channel)"
+                    class="w-full px-4 py-2 flex items-center gap-3 hover:bg-gray-800 transition-colors text-left"
+                    :class="{ 'bg-blue-900/50 border-l-2 border-blue-500': selectedChannel?.id === channel.id }">
+                    <span class="text-sm truncate">{{ channel.name }}</span>
+                </button>
             </div>
         </div>
 
@@ -181,18 +186,22 @@ const {
 const { isSidebarCollapsed } = storeToRefs(uiStore)
 
 const searchInput = ref('')
+const isSearching = ref(false)
 
 // Debounce search
 let searchTimeout = null
 watch(searchInput, (value) => {
     clearTimeout(searchTimeout)
+    isSearching.value = true
     searchTimeout = setTimeout(() => {
         iptvStore.setSearchQuery(value)
+        isSearching.value = false
     }, 300)
 })
 
 function clearSearch() {
     searchInput.value = ''
+    isSearching.value = false
     iptvStore.setSearchQuery('')
 }
 
