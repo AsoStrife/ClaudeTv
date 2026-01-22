@@ -35,9 +35,35 @@ const cacheStats = computed(() => iptvStore.getStreamCacheStats())
 
 // Tabs
 const activeTab = ref('playlists')
+const confirmDialog = ref({
+    show: false,
+    title: '',
+    message: '',
+    onConfirm: null
+})
 
 function addNewPlaylist() {
     router.push('/setup')
+}
+
+function showConfirmDialog(title, message, onConfirm) {
+    confirmDialog.value = {
+        show: true,
+        title,
+        message,
+        onConfirm
+    }
+}
+
+function closeConfirmDialog() {
+    confirmDialog.value.show = false
+}
+
+function handleConfirm() {
+    if (confirmDialog.value.onConfirm) {
+        confirmDialog.value.onConfirm()
+    }
+    closeConfirmDialog()
 }
 
 function editPlaylist(id) {
@@ -46,8 +72,12 @@ function editPlaylist(id) {
 
 function deletePlaylist(id) {
     const playlist = playlists.value.find(p => p.id === id)
-    if (playlist && confirm(`Sei sicuro di voler eliminare "${playlist.name}"?`)) {
-        iptvStore.deletePlaylist(id)
+    if (playlist) {
+        showConfirmDialog(
+            'Elimina Playlist',
+            `Sei sicuro di voler eliminare "${playlist.name}"?`,
+            () => iptvStore.deletePlaylist(id)
+        )
     }
 }
 
@@ -76,15 +106,19 @@ function formatDate(dateString) {
 }
 
 function resetStreamSettings() {
-    if (confirm('Sei sicuro di voler ripristinare le impostazioni di default?')) {
-        uiStore.resetStreamSettings()
-    }
+    showConfirmDialog(
+        'Ripristina Impostazioni',
+        'Sei sicuro di voler ripristinare le impostazioni di default?',
+        () => uiStore.resetStreamSettings()
+    )
 }
 
 function clearStreamCache() {
-    if (confirm('Sei sicuro di voler cancellare la cache dei tipi di stream?')) {
-        iptvStore.clearStreamTypeCache()
-    }
+    showConfirmDialog(
+        'Cancella Cache',
+        'Sei sicuro di voler cancellare la cache dei tipi di stream?',
+        () => iptvStore.clearStreamTypeCache()
+    )
 }
 </script>
 
@@ -317,6 +351,29 @@ function clearStreamCache() {
                 </div>
             </div>
         </div>
+
+        <!-- Confirm Dialog -->
+        <Teleport to="body">
+            <div v-if="confirmDialog.show" 
+                class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+                @click="closeConfirmDialog">
+                <div class="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl max-w-md w-full p-6"
+                    @click.stop>
+                    <h3 class="text-xl font-bold text-white mb-3">{{ confirmDialog.title }}</h3>
+                    <p class="text-gray-300 mb-6">{{ confirmDialog.message }}</p>
+                    <div class="flex gap-3 justify-end">
+                        <button @click="closeConfirmDialog"
+                            class="px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white rounded-lg transition-colors">
+                            Annulla
+                        </button>
+                        <button @click="handleConfirm"
+                            class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors">
+                            Conferma
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </Teleport>
     </div>
 </template>
 

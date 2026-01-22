@@ -14,6 +14,13 @@ onMounted(async () => {
     if (iptvStore.activePlaylistId && !iptvStore.hasPlaylist) {
         await iptvStore.loadPlaylist()
     }
+
+    // Disabilita il menu contestuale del browser ovunque tranne che sui canali
+    window.addEventListener('contextmenu', (e) => {
+        if (!e.target.closest('.channel-item')) {
+            e.preventDefault()
+        }
+    })
 })
 </script>
 
