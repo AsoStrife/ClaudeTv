@@ -5,6 +5,7 @@ import { useIptvStore } from '@/stores/iptv'
 import { useUiStore } from '@/stores/ui'
 import { StreamType } from '@/utils/streamHandler'
 import { useI18n } from 'vue-i18n'
+import VpnSettings from '@/components/VpnSettings.vue'
 
 const { t } = useI18n()
 const { locale } = useI18n()
@@ -174,6 +175,14 @@ function clearStreamCache() {
                     ]">
                         {{ t('settings.tabs.playlists') }}
                     </button>
+                    <button @click="activeTab = 'vpn'" :class="[
+                        'px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base whitespace-nowrap',
+                        activeTab === 'vpn'
+                            ? 'bg-blue-600 text-white'
+                            : 'bg-gray-800 text-gray-400 hover:bg-gray-700'
+                    ]">
+                        {{ t('settings.tabs.vpn') }}
+                    </button>
                     <button @click="activeTab = 'streaming'" :class="[
                         'px-3 sm:px-4 py-2 rounded-lg font-medium transition-colors text-sm sm:text-base whitespace-nowrap',
                         activeTab === 'streaming'
@@ -278,6 +287,11 @@ function clearStreamCache() {
                     <h3 class="text-xl font-semibold text-gray-400 mb-2">{{ t('settings.playlists.emptyTitle') }}</h3>
                     <p class="text-gray-500">{{ t('settings.playlists.emptyDescription') }}</p>
                 </div>
+            </div>
+
+            <!-- VPN Tab -->
+            <div v-if="activeTab === 'vpn'">
+                <VpnSettings />
             </div>
 
             <!-- Streaming Tab -->

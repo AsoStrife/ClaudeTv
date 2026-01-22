@@ -44,6 +44,7 @@
         "description": "Manage your IPTV playlists and stream settings",
         "tabs": {
             "playlists": "Playlists",
+            "vpn": "VPN",
             "streaming": "Streaming",
             "language": "Language"
         },
@@ -83,6 +84,44 @@
             "english": "English",
             "autoDetect": "Auto Detect",
             "autoDetectDescription": "Use system language"
+        }
+    },
+    "vpn": {
+        "detectedClients": "Detected VPN Clients",
+        "installed": "Installed",
+        "notInstalled": "Not installed",
+        "noClientsWarning": "No VPN client detected. Please install WireGuard or OpenVPN to use this feature.",
+        "configuration": "VPN Configuration",
+        "noConfigDescription": "Upload a WireGuard (.conf) or OpenVPN (.ovpn) configuration file to enable VPN protection.",
+        "selectFile": "Select VPN Configuration",
+        "uploadConfig": "Upload Configuration File",
+        "parseError": "Failed to parse configuration file",
+        "invalidConfig": "Invalid configuration file",
+        "removeConfig": "Remove configuration",
+        "file": "File",
+        "endpoint": "Server",
+        "address": "Address",
+        "testConnection": "Connect VPN",
+        "disconnect": "Disconnect",
+        "autoConnect": "Auto-connect",
+        "autoConnectDescription": "Automatically connect to VPN before loading playlists and streaming",
+        "adminNote": "VPN connections require administrator privileges. You may be prompted for admin access when connecting.",
+        "status": {
+            "disconnected": "Disconnected",
+            "connecting": "Connecting...",
+            "connected": "Connected",
+            "disconnecting": "Disconnecting...",
+            "error": "Error"
+        },
+        "footer": {
+            "noConfig": "VPN not configured",
+            "connected": "{vpn} Connected",
+            "connecting": "Connecting...",
+            "disconnecting": "Disconnecting...",
+            "disconnected": "VPN Disconnected",
+            "error": "VPN Error",
+            "connect": "Connect",
+            "disconnect": "Disconnect"
         }
     },
     "sidebar": {

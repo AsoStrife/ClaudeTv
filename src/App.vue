@@ -2,6 +2,7 @@
 import { computed, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import ChannelSidebar from '@/components/ChannelSidebar.vue'
+import VpnFooter from '@/components/VpnFooter.vue'
 import { useIptvStore } from '@/stores/iptv'
 
 const route = useRoute()
@@ -32,12 +33,16 @@ onMounted(async () => {
         </main>
     </div>
 
-    <!-- Default layout: fixed viewport with sidebar + player -->
-    <div v-else class="h-screen w-screen flex bg-gray-950 overflow-hidden">
-        <ChannelSidebar />
-        <main class="flex-1 flex flex-col min-w-0 relative">
-            <router-view class="flex-1" />
-        </main>
+    <!-- Default layout: fixed viewport with sidebar + player + VPN footer -->
+    <div v-else class="h-screen w-screen flex flex-col bg-gray-950 overflow-hidden">
+        <div class="flex-1 flex min-h-0">
+            <ChannelSidebar />
+            <main class="flex-1 flex flex-col min-w-0 relative">
+                <router-view class="flex-1" />
+            </main>
+        </div>
+        <!-- VPN Status Footer -->
+        <VpnFooter />
     </div>
 </template>
 
