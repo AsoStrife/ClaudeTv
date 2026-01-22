@@ -5,14 +5,15 @@
         <!-- Pulsante per riaprire -->
         <button @click="uiStore.toggleSidebar"
             class="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded transition-colors"
-            title="Mostra sidebar">
+            :title="t('sidebar.show')">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
             </svg>
         </button>
         <!-- Pulsante impostazioni -->
         <button @click="goToSettings"
-            class="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded transition-colors" title="Impostazioni">
+            class="p-2 text-gray-400 hover:text-white hover:bg-gray-800 rounded transition-colors"
+            :title="t('sidebar.settings')">
             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                     d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -29,15 +30,15 @@
             <!-- Header -->
             <div class="flex items-center justify-between mb-3 sm:mb-4">
                 <div class="flex-1 min-w-0">
-                    <h1 class="text-lg sm:text-xl font-bold text-blue-400">ClaudeTV</h1>
-                    <p v-if="activePlaylist" class="text-xs text-gray-500 truncate mt-0.5">Playlist: {{
-                        activePlaylist.name }}</p>
+                    <h1 class="text-lg sm:text-xl font-bold text-blue-400">{{ t('app.name') }}</h1>
+                    <p v-if="activePlaylist" class="text-xs text-gray-500 truncate mt-0.5">{{ t('sidebar.playlist', {
+                        name: activePlaylist.name }) }}</p>
                 </div>
                 <div class="flex items-center gap-2 flex-shrink-0">
                     <!-- Settings Button -->
                     <button @click="goToSettings"
                         class="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded transition-colors"
-                        title="Impostazioni">
+                        :title="t('sidebar.settings')">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
@@ -48,7 +49,7 @@
                     <!-- Toggle Sidebar Button -->
                     <button @click="uiStore.toggleSidebar"
                         class="p-1.5 text-gray-400 hover:text-white hover:bg-gray-800 rounded transition-colors"
-                        title="Nascondi sidebar">
+                        :title="t('sidebar.hide')">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
@@ -59,14 +60,14 @@
 
             <!-- Stats -->
             <div v-if="hasPlaylist" class="text-xs text-gray-400">
-                {{ filteredChannelsCount }} / {{ totalChannels }} canali
+                {{ t('sidebar.channelsCount', { filtered: filteredChannelsCount, total: totalChannels }) }}
             </div>
         </div>
 
         <!-- Search -->
         <div v-if="hasPlaylist" class="flex-shrink-0 p-4 border-b border-gray-700">
             <div class="relative">
-                <input v-model="searchInput" type="text" placeholder="Cerca canale..."
+                <input v-model="searchInput" type="text" :placeholder="t('common.search')"
                     class="w-full px-3 py-2 pl-9 bg-gray-800 border border-gray-600 rounded-lg text-sm text-white placeholder-gray-400 focus:outline-none focus:border-blue-500" />
                 <svg class="absolute left-3 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor"
                     viewBox="0 0 24 24">
@@ -86,11 +87,11 @@
             <div class="flex gap-2 mt-2">
                 <button @click="expandAllCategories"
                     class="flex-1 px-2 py-1 text-xs bg-gray-800 hover:bg-gray-700 rounded transition-colors">
-                    Espandi tutto
+                    {{ t('sidebar.expandAll') }}
                 </button>
                 <button @click="collapseAllCategories"
                     class="flex-1 px-2 py-1 text-xs bg-gray-800 hover:bg-gray-700 rounded transition-colors">
-                    Comprimi tutto
+                    {{ t('sidebar.collapseAll') }}
                 </button>
             </div>
         </div>
@@ -164,7 +165,7 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                         d="M7 4v16M17 4v16M3 8h4m10 0h4M3 12h18M3 16h4m10 0h4M4 20h16a1 1 0 001-1V5a1 1 0 00-1-1H4a1 1 0 00-1 1v14a1 1 0 001 1z" />
                 </svg>
-                <p class="text-sm">Inserisci l'URL di una playlist M3U per iniziare</p>
+                <p class="text-sm">{{ t('sidebar.emptyMessage') }}</p>
             </div>
         </div>
 
@@ -184,8 +185,9 @@
                             d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"
                             stroke-linecap="round" stroke-linejoin="round" stroke-width="2" />
                     </svg>
-                    <span v-if="contextMenu.channel && isFavorite(contextMenu.channel.id)">Rimuovi da preferiti</span>
-                    <span v-else>Aggiungi a preferiti</span>
+                    <span v-if="contextMenu.channel && isFavorite(contextMenu.channel.id)">{{
+                        t('sidebar.removeFromFavorites') }}</span>
+                    <span v-else>{{ t('sidebar.addToFavorites') }}</span>
                 </button>
             </div>
         </Teleport>
@@ -198,6 +200,9 @@ import { storeToRefs } from 'pinia'
 import { useRouter } from 'vue-router'
 import { useIptvStore } from '@/stores/iptv'
 import { useUiStore } from '@/stores/ui'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const router = useRouter()
 const iptvStore = useIptvStore()

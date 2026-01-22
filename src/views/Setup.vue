@@ -2,6 +2,9 @@
 import { ref, watch, onMounted, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useIptvStore } from '@/stores/iptv'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const router = useRouter()
 const route = useRoute()
@@ -86,12 +89,12 @@ watch(playlistUrl, (newUrl) => {
 
 async function handleSave() {
     if (!playlistUrl.value.trim()) {
-        error.value = 'Inserisci un URL valido'
+        error.value = t('setup.errorInvalidUrl')
         return
     }
 
     if (!playlistName.value.trim()) {
-        error.value = 'Inserisci un nome per la playlist'
+        error.value = t('setup.errorInvalidName')
         return
     }
 
@@ -179,9 +182,10 @@ function handleCancel() {
         <div class="w-full max-w-md p-3 sm:p-6 md:p-8 my-4">
             <!-- Logo/Header -->
             <div class="text-center mb-6 sm:mb-8 px-1">
-                <h1 class="text-xl sm:text-4xl font-bold text-blue-400 mb-1 break-words leading-tight">ClaudeTV</h1>
+                <h1 class="text-xl sm:text-4xl font-bold text-blue-400 mb-1 break-words leading-tight">{{ t('app.name')
+                    }}</h1>
                 <p class="text-xs sm:text-base text-gray-400 break-words leading-snug">
-                    {{ isEditing ? 'Modifica playlist' : 'Aggiungi nuova playlist' }}
+                    {{ isEditing ? t('setup.editTitle') : t('setup.title') }}
                 </p>
             </div>
 
@@ -191,38 +195,42 @@ function handleCancel() {
                     <!-- Nome Playlist -->
                     <div>
                         <label for="playlist-name" class="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
-                            Nome Playlist
+                            {{ t('setup.playlistName') }}
                         </label>
                         <input id="playlist-name" v-model="playlistName" type="text" required
-                            placeholder="La mia playlist IPTV"
+                            :placeholder="t('setup.playlistNamePlaceholder')"
                             class="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800 border border-gray-700 rounded-lg text-sm sm:text-base text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all" />
                     </div>
 
                     <!-- URL Playlist -->
                     <div>
                         <label for="playlist-url" class="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
-                            URL Playlist M3U
+                            {{ t('setup.playlistUrl') }}
                         </label>
                         <input id="playlist-url" v-model="playlistUrl" type="url" required
-                            placeholder="http://example.com/playlist.m3u"
+                            :placeholder="t('setup.playlistUrlPlaceholder')"
                             class="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800 border border-gray-700 rounded-lg text-sm sm:text-base text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all" />
                     </div>
 
                     <!-- Username -->
                     <div>
                         <label for="username" class="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
-                            Username <span class="text-gray-500 text-xs">(opzionale)</span>
+                            {{ t('setup.username') }} <span class="text-gray-500 text-xs">({{ t('common.optional')
+                                }})</span>
                         </label>
-                        <input id="username" v-model="username" type="text" placeholder="Username"
+                        <input id="username" v-model="username" type="text"
+                            :placeholder="t('setup.usernamePlaceholder')"
                             class="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800 border border-gray-700 rounded-lg text-sm sm:text-base text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all" />
                     </div>
 
                     <!-- Password -->
                     <div>
                         <label for="password" class="block text-xs sm:text-sm font-medium text-gray-300 mb-2">
-                            Password <span class="text-gray-500 text-xs">(opzionale)</span>
+                            {{ t('setup.password') }} <span class="text-gray-500 text-xs">({{ t('common.optional')
+                                }})</span>
                         </label>
-                        <input id="password" v-model="password" type="password" placeholder="Password"
+                        <input id="password" v-model="password" type="password"
+                            :placeholder="t('setup.passwordPlaceholder')"
                             class="w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800 border border-gray-700 rounded-lg text-sm sm:text-base text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all" />
                     </div>
 
@@ -231,9 +239,10 @@ function handleCancel() {
                         <label class="flex items-center gap-2 sm:gap-3 cursor-pointer">
                             <input v-model="useType" type="checkbox"
                                 class="w-4 h-4 sm:w-5 sm:h-5 bg-gray-800 border-gray-700 rounded text-blue-600 focus:ring-2 focus:ring-blue-500" />
-                            <span class="text-xs sm:text-sm font-medium text-gray-300">Aggiungi parametro Type</span>
+                            <span class="text-xs sm:text-sm font-medium text-gray-300">{{ t('setup.addTypeParam')
+                                }}</span>
                         </label>
-                        <input v-if="useType" v-model="type" type="text" placeholder="m3u_plus"
+                        <input v-if="useType" v-model="type" type="text" :placeholder="t('setup.typePlaceholder')"
                             class="mt-2 w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800 border border-gray-700 rounded-lg text-sm sm:text-base text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all" />
                     </div>
 
@@ -242,9 +251,10 @@ function handleCancel() {
                         <label class="flex items-center gap-2 sm:gap-3 cursor-pointer">
                             <input v-model="useOutput" type="checkbox"
                                 class="w-4 h-4 sm:w-5 sm:h-5 bg-gray-800 border-gray-700 rounded text-blue-600 focus:ring-2 focus:ring-blue-500" />
-                            <span class="text-xs sm:text-sm font-medium text-gray-300">Aggiungi parametro Output</span>
+                            <span class="text-xs sm:text-sm font-medium text-gray-300">{{ t('setup.addOutputParam')
+                                }}</span>
                         </label>
-                        <input v-if="useOutput" v-model="output" type="text" placeholder="mpegts"
+                        <input v-if="useOutput" v-model="output" type="text" :placeholder="t('setup.outputPlaceholder')"
                             class="mt-2 w-full px-3 sm:px-4 py-2 sm:py-3 bg-gray-800 border border-gray-700 rounded-lg text-sm sm:text-base text-white placeholder-gray-500 focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/50 transition-all" />
                     </div>
 
@@ -270,15 +280,15 @@ function handleCancel() {
                                     d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                                 </path>
                             </svg>
-                            Caricamento...
+                            {{ t('common.loading') }}
                         </span>
-                        <span v-else>{{ isEditing ? 'Salva Modifiche' : 'Salva e Continua' }}</span>
+                        <span v-else>{{ isEditing ? t('common.saveChanges') : t('common.save') }}</span>
                     </button>
 
                     <!-- Cancel Button -->
                     <button type="button" @click="handleCancel"
                         class="w-full px-4 sm:px-6 py-2 sm:py-3 bg-gray-700 hover:bg-gray-600 text-white text-sm sm:text-base font-semibold rounded-lg transition-all">
-                        Annulla
+                        {{ t('common.cancel') }}
                     </button>
                 </form>
 
@@ -289,7 +299,7 @@ function handleCancel() {
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        Se l'URL contiene parametri username e password, verranno rilevati automaticamente.
+                        {{ t('setup.infoMessage') }}
                     </p>
                 </div>
             </div>

@@ -1,0 +1,109 @@
+{
+    "app": {
+        "name": "ClaudeTV"
+    },
+    "common": {
+        "back": "Torna Indietro",
+        "backShort": "Indietro",
+        "cancel": "Annulla",
+        "confirm": "Conferma",
+        "loading": "Caricamento...",
+        "save": "Salva e Continua",
+        "saveChanges": "Salva Modifiche",
+        "delete": "Elimina",
+        "edit": "Modifica",
+        "activate": "Attiva",
+        "active": "Attiva",
+        "retry": "Riprova",
+        "retryForce": "Riprova (forza)",
+        "close": "Chiudi riproduzione",
+        "search": "Cerca canale...",
+        "optional": "opzionale"
+    },
+    "setup": {
+        "title": "Aggiungi nuova playlist",
+        "editTitle": "Modifica playlist",
+        "playlistName": "Nome Playlist",
+        "playlistNamePlaceholder": "La mia playlist IPTV",
+        "playlistUrl": "URL Playlist M3U",
+        "playlistUrlPlaceholder": "http://example.com/playlist.m3u",
+        "username": "Username",
+        "usernamePlaceholder": "Username",
+        "password": "Password",
+        "passwordPlaceholder": "Password",
+        "addTypeParam": "Aggiungi parametro Type",
+        "typePlaceholder": "m3u_plus",
+        "addOutputParam": "Aggiungi parametro Output",
+        "outputPlaceholder": "mpegts",
+        "infoMessage": "Se l'URL contiene parametri username e password, verranno rilevati automaticamente.",
+        "errorInvalidUrl": "Inserisci un URL valido",
+        "errorInvalidName": "Inserisci un nome per la playlist"
+    },
+    "settings": {
+        "title": "Impostazioni",
+        "description": "Gestisci le tue playlist IPTV e le impostazioni dello stream",
+        "tabs": {
+            "playlists": "Playlist",
+            "streaming": "Streaming",
+            "language": "Lingua"
+        },
+        "playlists": {
+            "addNew": "Aggiungi Nuova Playlist",
+            "emptyTitle": "Nessuna playlist configurata",
+            "emptyDescription": "Aggiungi la tua prima playlist per iniziare",
+            "deleteTitle": "Elimina Playlist",
+            "deleteMessage": "Sei sicuro di voler eliminare \"{name}\"?",
+            "createdAt": "Creato il"
+        },
+        "streaming": {
+            "timeoutTitle": "Timeout Caricamento",
+            "timeoutDescription": "Tempo massimo di attesa prima di passare all'adapter successivo. Aumenta questo valore per connessioni lente.",
+            "retryTitle": "Tentativi di Riconnessione",
+            "retryDescription": "Numero di tentativi per ogni adapter prima di passare al successivo.",
+            "advancedTitle": "Opzioni Avanzate",
+            "fallbackTitle": "Fallback Automatico",
+            "fallbackDescription": "Prova automaticamente altri formati se uno fallisce",
+            "contentTypeTitle": "Rilevamento Content-Type",
+            "contentTypeDescription": "Usa richieste HEAD per identificare il formato stream",
+            "cacheTitle": "Cache Stream",
+            "cacheDescription": "I tipi di stream funzionanti vengono memorizzati per velocizzare i caricamenti futuri.",
+            "streamsCached": "stream memorizzati",
+            "clearCache": "Svuota Cache",
+            "clearCacheTitle": "Cancella Cache",
+            "clearCacheMessage": "Sei sicuro di voler cancellare la cache dei tipi di stream?",
+            "resetTitle": "Ripristina Impostazioni",
+            "resetMessage": "Sei sicuro di voler ripristinare le impostazioni di default?",
+            "resetButton": "Ripristina Impostazioni Default"
+        },
+        "language": {
+            "title": "Lingua dell'Interfaccia",
+            "description": "Seleziona la lingua da utilizzare nell'applicazione.",
+            "current": "Lingua attuale",
+            "italian": "Italiano",
+            "english": "English",
+            "autoDetect": "Rilevamento Automatico",
+            "autoDetectDescription": "Usa la lingua del sistema operativo"
+        }
+    },
+    "sidebar": {
+        "show": "Mostra sidebar",
+        "hide": "Nascondi sidebar",
+        "settings": "Impostazioni",
+        "playlist": "Playlist: {name}",
+        "channelsCount": "{filtered} / {total} canali",
+        "expandAll": "Espandi tutto",
+        "collapseAll": "Comprimi tutto",
+        "emptyMessage": "Inserisci l'URL di una playlist M3U per iniziare",
+        "addToFavorites": "Aggiungi a preferiti",
+        "removeFromFavorites": "Rimuovi da preferiti"
+    },
+    "player": {
+        "errorTitle": "Errore di riproduzione",
+        "noChannelTitle": "Nessun canale selezionato",
+        "noChannelDescription": "Seleziona un canale dalla lista per iniziare la riproduzione"
+    },
+    "about": {
+        "title": "Informazioni",
+        "description": "Questa è una pagina di esempio."
+    }
+}

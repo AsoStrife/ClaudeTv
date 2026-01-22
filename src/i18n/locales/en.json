@@ -1,0 +1,109 @@
+{
+    "app": {
+        "name": "ClaudeTV"
+    },
+    "common": {
+        "back": "Go Back",
+        "backShort": "Back",
+        "cancel": "Cancel",
+        "confirm": "Confirm",
+        "loading": "Loading...",
+        "save": "Save and Continue",
+        "saveChanges": "Save Changes",
+        "delete": "Delete",
+        "edit": "Edit",
+        "activate": "Activate",
+        "active": "Active",
+        "retry": "Retry",
+        "retryForce": "Retry (force)",
+        "close": "Close playback",
+        "search": "Search channel...",
+        "optional": "optional"
+    },
+    "setup": {
+        "title": "Add new playlist",
+        "editTitle": "Edit playlist",
+        "playlistName": "Playlist Name",
+        "playlistNamePlaceholder": "My IPTV playlist",
+        "playlistUrl": "M3U Playlist URL",
+        "playlistUrlPlaceholder": "http://example.com/playlist.m3u",
+        "username": "Username",
+        "usernamePlaceholder": "Username",
+        "password": "Password",
+        "passwordPlaceholder": "Password",
+        "addTypeParam": "Add Type parameter",
+        "typePlaceholder": "m3u_plus",
+        "addOutputParam": "Add Output parameter",
+        "outputPlaceholder": "mpegts",
+        "infoMessage": "If the URL contains username and password parameters, they will be detected automatically.",
+        "errorInvalidUrl": "Enter a valid URL",
+        "errorInvalidName": "Enter a name for the playlist"
+    },
+    "settings": {
+        "title": "Settings",
+        "description": "Manage your IPTV playlists and stream settings",
+        "tabs": {
+            "playlists": "Playlists",
+            "streaming": "Streaming",
+            "language": "Language"
+        },
+        "playlists": {
+            "addNew": "Add New Playlist",
+            "emptyTitle": "No playlists configured",
+            "emptyDescription": "Add your first playlist to get started",
+            "deleteTitle": "Delete Playlist",
+            "deleteMessage": "Are you sure you want to delete \"{name}\"?",
+            "createdAt": "Created on"
+        },
+        "streaming": {
+            "timeoutTitle": "Loading Timeout",
+            "timeoutDescription": "Maximum wait time before switching to the next adapter. Increase this value for slow connections.",
+            "retryTitle": "Retry Attempts",
+            "retryDescription": "Number of attempts for each adapter before moving to the next.",
+            "advancedTitle": "Advanced Options",
+            "fallbackTitle": "Automatic Fallback",
+            "fallbackDescription": "Automatically try other formats if one fails",
+            "contentTypeTitle": "Content-Type Detection",
+            "contentTypeDescription": "Use HEAD requests to identify stream format",
+            "cacheTitle": "Stream Cache",
+            "cacheDescription": "Working stream types are stored to speed up future loads.",
+            "streamsCached": "cached streams",
+            "clearCache": "Clear Cache",
+            "clearCacheTitle": "Clear Cache",
+            "clearCacheMessage": "Are you sure you want to clear the stream type cache?",
+            "resetTitle": "Reset Settings",
+            "resetMessage": "Are you sure you want to reset to default settings?",
+            "resetButton": "Reset to Default Settings"
+        },
+        "language": {
+            "title": "Interface Language",
+            "description": "Select the language to use in the application.",
+            "current": "Current language",
+            "italian": "Italiano",
+            "english": "English",
+            "autoDetect": "Auto Detect",
+            "autoDetectDescription": "Use system language"
+        }
+    },
+    "sidebar": {
+        "show": "Show sidebar",
+        "hide": "Hide sidebar",
+        "settings": "Settings",
+        "playlist": "Playlist: {name}",
+        "channelsCount": "{filtered} / {total} channels",
+        "expandAll": "Expand all",
+        "collapseAll": "Collapse all",
+        "emptyMessage": "Enter an M3U playlist URL to get started",
+        "addToFavorites": "Add to favorites",
+        "removeFromFavorites": "Remove from favorites"
+    },
+    "player": {
+        "errorTitle": "Playback error",
+        "noChannelTitle": "No channel selected",
+        "noChannelDescription": "Select a channel from the list to start playback"
+    },
+    "about": {
+        "title": "About",
+        "description": "This is an example about page."
+    }
+}

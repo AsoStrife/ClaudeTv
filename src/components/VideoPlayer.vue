@@ -10,16 +10,16 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <h3 class="text-xl font-bold text-white mb-2">Errore di riproduzione</h3>
+                <h3 class="text-xl font-bold text-white mb-2">{{ t('player.errorTitle') }}</h3>
                 <p class="text-gray-400 text-sm mb-4">{{ playerError }}</p>
                 <div class="flex gap-3 justify-center">
                     <button @click="retry"
                         class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors">
-                        Riprova
+                        {{ t('common.retry') }}
                     </button>
                     <button @click="retryFresh"
                         class="px-4 py-2 bg-gray-700 hover:bg-gray-600 text-white rounded-lg transition-colors text-sm">
-                        Riprova (forza)
+                        {{ t('common.retryForce') }}
                     </button>
                 </div>
             </div>
@@ -32,8 +32,8 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
                         d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
-                <h3 class="text-xl font-bold text-gray-400 mb-2">Nessun canale selezionato</h3>
-                <p class="text-gray-500 text-sm">Seleziona un canale dalla lista per iniziare la riproduzione</p>
+                <h3 class="text-xl font-bold text-gray-400 mb-2">{{ t('player.noChannelTitle') }}</h3>
+                <p class="text-gray-500 text-sm">{{ t('player.noChannelDescription') }}</p>
             </div>
         </div>
 
@@ -57,7 +57,7 @@
                 </div>
                 <button @click="$emit('close')"
                     class="pointer-events-auto p-2 bg-gray-900/80 hover:bg-red-600 text-white rounded-lg transition-colors"
-                    title="Chiudi riproduzione">
+                    :title="t('common.close')">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                             d="M6 18L18 6M6 6l12 12" />
@@ -73,6 +73,9 @@ import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { StreamHandler } from '@/utils/streamHandler'
 import { useUiStore } from '@/stores/ui'
 import { useIptvStore } from '@/stores/iptv'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const props = defineProps({
     channel: {

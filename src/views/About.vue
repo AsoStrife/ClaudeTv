@@ -1,10 +1,14 @@
 <template>
-  <div>
-    <h2>About</h2>
-    <p>This is an example about page.</p>
-  </div>
+    <div>
+        <h2>{{ t('about.title') }}</h2>
+        <p>{{ t('about.description') }}</p>
+    </div>
 </template>
 
-<script setup></script>
+<script setup>
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+</script>
 
 <style scoped></style>

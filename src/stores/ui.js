@@ -8,6 +8,12 @@ export const useUiStore = defineStore("ui", () => {
     const isSidebarCollapsed = useLocalStorage("ui/sidebarCollapsed", false);
 
     // ========================================
+    // Lingua (persistita)
+    // ========================================
+    // 'auto' = rilevamento automatico, 'it' = italiano, 'en' = inglese
+    const selectedLanguage = useLocalStorage("ui/language", "auto");
+
+    // ========================================
     // Configurazione Stream Handler (persistita)
     // ========================================
 
@@ -60,6 +66,17 @@ export const useUiStore = defineStore("ui", () => {
     }
 
     // ========================================
+    // Actions - Language
+    // ========================================
+
+    function setLanguage(lang) {
+        // Validazione: accetta solo 'auto', 'it', 'en'
+        if (['auto', 'it', 'en'].includes(lang)) {
+            selectedLanguage.value = lang;
+        }
+    }
+
+    // ========================================
     // Actions - Stream Settings
     // ========================================
 
@@ -106,6 +123,10 @@ export const useUiStore = defineStore("ui", () => {
         toggleSidebar,
         collapseSidebar,
         expandSidebar,
+
+        // Language
+        selectedLanguage,
+        setLanguage,
 
         // Stream Settings
         streamTimeout,
