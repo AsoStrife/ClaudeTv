@@ -121,7 +121,8 @@
             "disconnected": "VPN Disconnected",
             "error": "VPN Error",
             "connect": "Connect",
-            "disconnect": "Disconnect"
+            "disconnect": "Disconnect",
+            "fetchingIp": "fetching IP..."
         }
     },
     "sidebar": {

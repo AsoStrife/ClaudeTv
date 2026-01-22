@@ -1,5 +1,5 @@
 <script setup>
-import { computed, onMounted, onUnmounted } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useI18n } from 'vue-i18n'
 import { useVpnStore, VpnStatus, VpnType } from '@/stores/vpn'
 
@@ -8,6 +8,10 @@ const vpnStore = useVpnStore()
 
 // Status polling interval
 let statusInterval = null
+
+// IP and geolocation info
+const ipInfo = ref(null)
+const loadingIp = ref(false)
 
 // Computed
 const hasConfig = computed(() => vpnStore.hasConfig)
@@ -37,6 +41,11 @@ const statusText = computed(() => {
 
     switch (status.value) {
         case VpnStatus.Connected:
+            // Show VPN name with IP and country if available
+            if (ipInfo.value && ipInfo.value.ip) {
+                const country = ipInfo.value.country || ''
+                return `${vpnName} - ${ipInfo.value.ip}${country ? ' - ' + country : ''}`
+            }
             return t('vpn.footer.connected', { vpn: vpnName })
         case VpnStatus.Connecting:
             return t('vpn.footer.connecting')
@@ -60,15 +69,51 @@ const bgColor = computed(() => {
 })
 
 // Methods
+async function fetchIpInfo() {
+    loadingIp.value = true
+    ipInfo.value = null
+    
+    try {
+        // Using ip-api.com - free, no API key required, returns IP + country
+        const response = await fetch('http://ip-api.com/json/?fields=query,country')
+        if (response.ok) {
+            const data = await response.json()
+            ipInfo.value = {
+                ip: data.query,
+                country: data.country
+            }
+        }
+    } catch (err) {
+        console.warn('Failed to fetch IP info:', err)
+    } finally {
+        loadingIp.value = false
+    }
+}
+
 async function toggleVpn() {
     if (isBusy.value) return
     await vpnStore.toggle()
 }
 
+// Watch for connection status changes to fetch IP info
+watch(isConnected, async (connected) => {
+    if (connected) {
+        // Small delay to ensure VPN connection is fully established
+        setTimeout(() => fetchIpInfo(), 2000)
+    } else {
+        ipInfo.value = null
+    }
+})
+
 // Lifecycle
 onMounted(async () => {
     // Initialize store
     await vpnStore.initialize()
+
+    // Fetch IP info if already connected
+    if (vpnStore.isConnected) {
+        fetchIpInfo()
+    }
 
     // Poll status every 10 seconds if connected
     statusInterval = setInterval(async () => {
@@ -92,6 +137,9 @@ onUnmounted(() => {
         <div class="flex items-center gap-2">
             <span class="text-sm leading-none">{{ statusIcon }}</span>
             <span class="text-gray-300">{{ statusText }}</span>
+            <span v-if="loadingIp && isConnected" class="text-gray-500 text-xs">
+                ({{ t('vpn.footer.fetchingIp') }})
+            </span>
             <span v-if="error" class="text-red-400 truncate max-w-[200px]" :title="error">
                 - {{ error }}
             </span>

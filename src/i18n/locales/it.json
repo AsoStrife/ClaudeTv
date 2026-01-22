@@ -121,7 +121,8 @@
             "disconnected": "VPN Disconnessa",
             "error": "Errore VPN",
             "connect": "Connetti",
-            "disconnect": "Disconnetti"
+            "disconnect": "Disconnetti",
+            "fetchingIp": "caricamento IP..."
         }
     },
     "sidebar": {
