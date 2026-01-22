@@ -3,17 +3,6 @@
         <!-- Video Element -->
         <video ref="videoRef" class="w-full h-full" controls autoplay playsinline />
 
-        <!-- Loading Overlay -->
-        <div v-if="isBuffering" class="absolute inset-0 flex items-center justify-center bg-black/50">
-            <div class="flex flex-col items-center gap-3">
-                <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                <span class="text-white text-sm">Caricamento stream...</span>
-                <span v-if="currentAdapterType" class="text-gray-400 text-xs">
-                    Formato: {{ currentAdapterType.toUpperCase() }}
-                </span>
-            </div>
-        </div>
-
         <!-- Error Overlay -->
         <div v-if="playerError" class="absolute inset-0 flex items-center justify-center bg-black/80">
             <div class="text-center p-6 max-w-md">

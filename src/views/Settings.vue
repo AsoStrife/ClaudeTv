@@ -354,11 +354,10 @@ function clearStreamCache() {
 
         <!-- Confirm Dialog -->
         <Teleport to="body">
-            <div v-if="confirmDialog.show" 
+            <div v-if="confirmDialog.show"
                 class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
                 @click="closeConfirmDialog">
-                <div class="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl max-w-md w-full p-6"
-                    @click.stop>
+                <div class="bg-gray-900 border border-gray-700 rounded-xl shadow-2xl max-w-md w-full p-6" @click.stop>
                     <h3 class="text-xl font-bold text-white mb-3">{{ confirmDialog.title }}</h3>
                     <p class="text-gray-300 mb-6">{{ confirmDialog.message }}</p>
                     <div class="flex gap-3 justify-end">
